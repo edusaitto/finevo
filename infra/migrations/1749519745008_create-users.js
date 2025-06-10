@@ -10,7 +10,6 @@ exports.up = (pgm) => {
     name: {
       type: "varchar(39)",
       notNull: true,
-      unique: true,
     },
 
     // Why 254 in length? https://stackoverflow.com/a/1199238

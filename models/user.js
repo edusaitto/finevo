@@ -2,12 +2,12 @@ import database from "infra/database.js";
 import password from "models/password.js";
 import { ValidationError, NotFoundError } from "infra/errors.js";
 
-async function findOneByUsername(username) {
-  const userFound = await runSelectQuery(username);
+async function findOneByUsername(name) {
+  const userFound = await runSelectQuery(name);
 
   return userFound;
 
-  async function runSelectQuery(username) {
+  async function runSelectQuery(name) {
     const results = await database.query({
       text: `
         SELECT 
@@ -15,17 +15,17 @@ async function findOneByUsername(username) {
         FROM
           users
         WHERE
-          LOWER(username) = LOWER($1)
+          LOWER(name) = LOWER($1)
         LIMIT
           1
         ;`,
-      values: [username],
+      values: [name],
     });
 
     if (results.rowCount === 0) {
       throw new NotFoundError({
-        message: "O username informado não foi encontrado no sistema.",
-        action: "Verifique se o username está digitado corretamente.",
+        message: "O name informado não foi encontrado no sistema.",
+        action: "Verifique se o name está digitado corretamente.",
       });
     }
 
@@ -34,7 +34,7 @@ async function findOneByUsername(username) {
 }
 
 async function create(userInputValues) {
-  await validateUniqueUsername(userInputValues.username);
+  await validateUniqueUsername(userInputValues.name);
   await validateUniqueEmail(userInputValues.email);
   await hashPasswordInObject(userInputValues);
 
@@ -45,14 +45,14 @@ async function create(userInputValues) {
     const results = await database.query({
       text: `
         INSERT INTO 
-          users (username, email, password)
+          users (name, email, password)
         VALUES
           ($1, $2, $3)
         RETURNING 
           *
         ;`,
       values: [
-        userInputValues.username,
+        userInputValues.name,
         userInputValues.email,
         userInputValues.password,
       ],
@@ -62,11 +62,11 @@ async function create(userInputValues) {
   }
 }
 
-async function update(username, userInputValues) {
-  const currentUser = await findOneByUsername(username);
+async function update(name, userInputValues) {
+  const currentUser = await findOneByUsername(name);
 
-  if ("username" in userInputValues) {
-    await validateUniqueUsername(userInputValues.username);
+  if ("name" in userInputValues) {
+    await validateUniqueUsername(userInputValues.name);
   }
 
   if ("email" in userInputValues) {
@@ -88,7 +88,7 @@ async function update(username, userInputValues) {
         UPDATE 
           users
         SET
-          username = $1,
+          name = $1,
           password = $2,
           email = $3,
           updated_at = timezone('utc', now())
@@ -98,7 +98,7 @@ async function update(username, userInputValues) {
           *
         `,
       values: [
-        userWithNewValues.username,
+        userWithNewValues.name,
         userWithNewValues.password,
         userWithNewValues.email,
         userWithNewValues.id,
@@ -109,23 +109,23 @@ async function update(username, userInputValues) {
   }
 }
 
-async function validateUniqueUsername(username) {
+async function validateUniqueUsername(name) {
   const results = await database.query({
     text: `
       SELECT 
-        username
+        name
       FROM
         users
       WHERE
-        LOWER(username) = LOWER($1)
+        LOWER(name) = LOWER($1)
       ;`,
-    values: [username],
+    values: [name],
   });
 
   if (results.rowCount > 0) {
     throw new ValidationError({
-      message: "O username informado já está sendo utilizado.",
-      action: "Utilize outro username para realizar esta operação.",
+      message: "O name informado já está sendo utilizado.",
+      action: "Utilize outro name para realizar esta operação.",
     });
   }
 }
