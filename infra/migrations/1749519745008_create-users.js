@@ -7,8 +7,8 @@ exports.up = (pgm) => {
     },
 
     // For reference, GitHub limits usernames to 39 characters.
-    username: {
-      type: "varchar(30)",
+    name: {
+      type: "varchar(39)",
       notNull: true,
       unique: true,
     },
