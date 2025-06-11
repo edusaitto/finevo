@@ -10,6 +10,6 @@ export default router.handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
   const { userId } = request.query;
-  const transactions = await transaction.getUserMonths(userId);
-  return response.status(200).json(transactions);
+  const months = await transaction.getUserMonths(userId);
+  return response.status(200).json(months);
 }
