@@ -23,6 +23,13 @@ exports.up = (pgm) => {
       default: pgm.func("timezone('utc', now())"),
     },
   });
+
+  pgm.sql(`
+    INSERT INTO types (id, title, created_at, updated_at)
+    VALUES 
+      (gen_random_uuid(), 'expense', timezone('utc', now()), timezone('utc', now())),
+      (gen_random_uuid(), 'revenue', timezone('utc', now()), timezone('utc', now()));
+  `);
 };
 
 exports.down = false;
