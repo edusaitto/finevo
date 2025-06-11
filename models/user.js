@@ -57,8 +57,7 @@ async function login(userInputValues) {
     });
   }
 
-  await hashPasswordInObject(userInputValues);
-  const matchPassword = password.compare(
+  const matchPassword = await password.compare(
     userInputValues.password,
     loggedUser.password,
   );

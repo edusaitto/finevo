@@ -16,7 +16,6 @@ exports.up = (pgm) => {
     title: {
       type: "varchar(50)",
       notNull: true,
-      unique: true,
     },
 
     type: {

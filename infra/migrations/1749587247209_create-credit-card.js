@@ -22,6 +22,11 @@ exports.up = (pgm) => {
       type: "varchar(20)",
     },
 
+    closing_day: {
+      type: "integer",
+      notNull: false,
+    },
+
     payment_day: {
       type: "integer",
       notNull: false,

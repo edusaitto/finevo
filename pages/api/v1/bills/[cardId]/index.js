@@ -1,6 +1,6 @@
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
-import transaction from "models/transaction.js";
+import bills from "models/bills.js";
 
 const router = createRouter();
 
@@ -9,7 +9,7 @@ router.get(getHandler);
 export default router.handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
-  const { userId } = request.query;
-  const months = await transaction.getUserMonths(userId);
-  return response.status(200).json(months);
+  const { cardId } = request.query;
+  const foundBills = await bills.getCardBills(cardId);
+  return response.status(200).json(foundBills);
 }
