@@ -32,7 +32,9 @@ export default function HomePage() {
     const fetchData = async () => {
       const userId = localStorage.getItem("userId");
 
-      const responseTotals = await fetch(`/api/v1/home/${userId}`);
+      const responseTotals = await fetch(
+        `/api/v1/home/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
+      );
       const dataTotals = await responseTotals.json();
       setDailyExpenses(formatCurrency(dataTotals.day));
       setWeeklyExpenses(formatCurrency(dataTotals.week));
@@ -40,36 +42,53 @@ export default function HomePage() {
       setCurrentBalance(formatCurrency(dataTotals.currentBalance));
       setForecastCheckpoint(formatCurrency(dataTotals.forecastCheckpoint));
       setForecastEndOfMonth(formatCurrency(dataTotals.forecastEndOfMonth));
+    };
 
+    if (selectedMonth) {
+      fetchData();
+    }
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const userId = localStorage.getItem("userId");
       const responseMonths = await fetch(
         `/api/v1/transaction/user/${userId}/months`,
       );
       const dataMonths = await responseMonths.json();
-      const translatedMonths = dataMonths.map(({ monthNumber, monthName }) => ({
-        number: monthNumber,
-        label: monthsPt[monthName] || monthName,
-      }));
+      const translatedMonths = dataMonths.map(
+        ({ monthNumber, monthName, year }) => ({
+          number: monthNumber,
+          label: monthsPt[monthName] || monthName,
+          year: year,
+        }),
+      );
 
       setMonths(translatedMonths);
 
-      if (translatedMonths.length == 1) {
-        setSelectedMonth(translatedMonths[0]);
-      } else if (translatedMonths.length > 1) {
-        const currentMonthNumber = new Date().getMonth() + 1;
+      if (!selectedMonth) {
+        if (translatedMonths.length == 1) {
+          setSelectedMonth(translatedMonths[0]);
+        } else if (translatedMonths.length > 1) {
+          const currentMonthNumber = new Date().getMonth() + 1;
 
-        const currentMonthLabel = translatedMonths.find(
-          (m) => m.monthNumber === currentMonthNumber,
-        );
+          const currentMonthLabel = translatedMonths.find(
+            (m) => m.monthNumber === currentMonthNumber,
+          );
 
-        setSelectedMonth(
-          { number: currentMonthNumber, label: currentMonthLabel } ??
-            translatedMonths[0],
-        );
+          setSelectedMonth(
+            {
+              number: currentMonthNumber,
+              label: currentMonthLabel,
+              year: new Date().getFullYear(),
+            } ?? translatedMonths[0],
+          );
+        }
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedMonth]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,6 +113,13 @@ export default function HomePage() {
         </h1>
 
         <div className="flex flex-col sm:flex-row justify-end gap-2">
+          {/* Botão cadastrar novo cartão */}
+          <Link href="/cards" className="w-full sm:w-auto">
+            <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
+              Novo cartão
+            </button>
+          </Link>
+
           {/* Botão cadastrar nova categoria */}
           <Link href="/category" className="w-full sm:w-auto">
             <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
@@ -122,21 +148,9 @@ export default function HomePage() {
             Resumo de saldos
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card title="Saldo Atual" value={currentBalance} />
-            <Card title="Checkpoint (Dia 14)" value={forecastCheckpoint} />
-            <Card title="Fim do Mês" value={forecastEndOfMonth} />
-          </div>
-        </section>
-
-        {/* Seção 2 */}
-        <section>
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
-            Gastos por período
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card title="Gastos do Dia" value={dailyExpenses} />
             <Card title="Gastos da Semana" value={weeklyExpenses} />
-            <Card title="Gastos do Mês" value={monthlyExpenses} />
+            <Card title="Saldo Atual" value={currentBalance} />
           </div>
         </section>
 
@@ -157,6 +171,17 @@ export default function HomePage() {
             </button>
           ))}
         </div>
+
+        {/* Seção 2 */}
+        <section>
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">
+            Gastos por período
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+            <Card title="Checkpoint (Dia 14)" value={forecastCheckpoint} />
+            <Card title="Fim do Mês" value={forecastEndOfMonth} />
+          </div>
+        </section>
 
         {/* Lista de gastos do mês selecionado */}
         {selectedMonth && (
