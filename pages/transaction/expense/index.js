@@ -6,8 +6,8 @@ export default function CreateExpensePage() {
   const router = useRouter();
   const [userId, setUserId] = useState(null);
   const [categories, setCategories] = useState([]);
-  // const cards = ["Nubank", "Santander", "Itaú"];
-  // const bills = ["Junho/2025", "Julho/2025", "Agosto/2025"];
+  const [cards, setCards] = useState([]);
+  const [bills, setBills] = useState([]);
   const [form, setForm] = useState({
     title: "",
     value: "",
@@ -15,8 +15,9 @@ export default function CreateExpensePage() {
     type: "expense",
     addAt: new Date().toISOString().split("T")[0],
     paidAt: new Date().toISOString().split("T")[0],
-    // creditCard: "",
-    // bill: "",
+    creditCard: "",
+    bill: "",
+    repeat: 1,
   });
 
   const selectClass = "w-full border rounded px-3 py-2 pr-8";
@@ -56,6 +57,9 @@ export default function CreateExpensePage() {
         type: form.type,
         paidAt: form.paidAt,
         addAt: form.addAt,
+        creditCard: form.creditCard,
+        bill: form.bill,
+        repeat: form.repeat,
       }),
     });
 
@@ -68,7 +72,7 @@ export default function CreateExpensePage() {
     const userIdFromStorage = localStorage.getItem("userId");
     setUserId(userIdFromStorage);
 
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       const response = await fetch(
         `/api/v1/categories/${userIdFromStorage}/expenses`,
       );
@@ -77,14 +81,46 @@ export default function CreateExpensePage() {
       setCategories(data);
     };
 
-    fetchData();
+    const fetchCards = async () => {
+      const response = await fetch(`/api/v1/cards/${userIdFromStorage}`);
+
+      const data = await response.json();
+      setCards(data);
+    };
+
+    fetchCategories();
+    fetchCards();
   }, [setCategories]);
+
+  useEffect(() => {
+    const fetchBills = async () => {
+      const response = await fetch(`/api/v1/bills/${form.creditCard}`);
+
+      const data = await response.json();
+      setBills(data);
+    };
+
+    if (form.creditCard) {
+      fetchBills();
+    }
+  }, [form.creditCard]);
+
+  useEffect(() => {
+    if (form.bill) {
+      const _bill = bills.find((b) => b.id === form.bill);
+
+      setForm((prev) => ({
+        ...prev,
+        paidAt: _bill.payment_date.split("T")[0],
+      }));
+    }
+  }, [form.bill, bills]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-xl mx-auto bg-white rounded-xl shadow p-6 space-y-6">
         <BackButton />
-        <h1 className="text-2xl font-bold text-gray-800">Nova Transação</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Nova despesa</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Título */}
@@ -153,9 +189,9 @@ export default function CreateExpensePage() {
             />
           </div>
 
-          {/* <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cartão de Crédito
+              Forma de pagamento
             </label>
             <select
               name="creditCard"
@@ -163,33 +199,52 @@ export default function CreateExpensePage() {
               onChange={handleChange}
               className={selectClass}
             >
-              <option value="">Nenhum</option>
-              {cards.map((cartao) => (
-                <option key={cartao} value={cartao}>
-                  {cartao}
+              <option value="">Débito</option>
+              {cards.map((card) => (
+                <option key={card.id} value={card.id}>
+                  {card.title}
                 </option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fatura
-            </label>
-            <select
-              name="bill"
-              value={form.bill}
-              onChange={handleChange}
-              className={selectClass}
-            >
-              <option value="">Selecione a fatura</option>
-              {bills.map((fatura) => (
-                <option key={fatura} value={fatura}>
-                  {fatura}
-                </option>
-              ))}
-            </select>
-          </div> */}
+          {form.creditCard && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fatura
+                </label>
+                <select
+                  name="bill"
+                  value={form.bill}
+                  onChange={handleChange}
+                  className={selectClass}
+                >
+                  <option value="">Selecione a fatura</option>
+                  {bills.map((bill) => (
+                    <option key={bill.id} value={bill.id}>
+                      {bill.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Repetições / Parcelas */}
+              <div>
+                <label className="block mb-1 font-medium text-gray-700">
+                  Parcelas
+                </label>
+                <input
+                  name="repeat"
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={form.repeat}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>{" "}
+            </>
+          )}
 
           {/* Data de Pagamento no fim */}
           <div>
@@ -210,7 +265,7 @@ export default function CreateExpensePage() {
             type="submit"
             className="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
           >
-            Salvar Transação
+            Salvar despesa
           </button>
         </form>
       </div>
