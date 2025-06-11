@@ -8,6 +8,20 @@ export default function HomePage() {
 
   const months = ["Maio", "Junho", "Julho"];
 
+  function formatCurrency(value) {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  }
+
+  function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("pt-BR", {
+      timeZone: "UTC",
+    });
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       const userId = localStorage.getItem("userId");
@@ -26,13 +40,33 @@ export default function HomePage() {
           Dashboard Financeiro
         </h1>
 
-        {/* Botão cadastrar nova transação */}
         <div className="flex justify-end">
-          <Link href="/transaction">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
-              Nova Transação
-            </button>
-          </Link>
+          {/* Botão cadastrar nova categoria */}
+          <div className="flex justify-end mr-2">
+            <Link href="/category">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
+                Nova categoria
+              </button>
+            </Link>
+          </div>
+
+          {/* Botão cadastrar nova receita */}
+          <div className="flex justify-end mr-2">
+            <Link href="/transaction/revenue">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
+                Nova receita
+              </button>
+            </Link>
+          </div>
+
+          {/* Botão cadastrar nova transação */}
+          <div className="flex justify-end">
+            <Link href="/transaction/expense">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
+                Nova despesa
+              </button>
+            </Link>
+          </div>
         </div>
 
         {/* Seção 1 */}
@@ -60,7 +94,7 @@ export default function HomePage() {
         </section>
 
         {/* Aba de troca de mês */}
-        <div className="flex gap-2 mt-6">
+        {/* <div className="flex gap-2 mt-6">
           {months.map((month) => (
             <button
               key={month}
@@ -74,23 +108,37 @@ export default function HomePage() {
               {month}
             </button>
           ))}
-        </div>
+        </div> */}
 
         {/* Lista de gastos do mês selecionado */}
         <section className="bg-white rounded-xl shadow p-4 mt-4">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">
             Gastos de {selectedMonth}
           </h3>
-          <ul className="space-y-2">
+
+          {/* Cabeçalho */}
+          <div className="flex text-sm font-semibold text-gray-600 border-b pb-2">
+            <span className="w-1/4">Data</span>
+            <span className="w-1/4">Nome</span>
+            <span className="w-1/4">Tipo</span>
+            <span className="w-1/4 text-right">Valor</span>
+          </div>
+
+          {/* Linhas */}
+          <ul className="mt-2 space-y-2">
             {expenses.map((item, index) => (
               <li
                 key={index}
-                className="flex justify-between items-center border-b pb-2 text-sm text-gray-700"
+                className="flex items-center text-sm text-gray-700 border-b pb-2"
               >
-                <span>
-                  {item.date} - {item.title}
+                <span className="w-1/4">{formatDate(item.paid_at)}</span>
+                <span className="w-1/4">{item.title}</span>
+                <span className="w-1/4 ">
+                  {item.type_title === "revenue" ? "Receita" : "Despesa"}
                 </span>
-                <span className="font-medium">{item.value}</span>
+                <span className="w-1/4 text-right font-medium">
+                  {formatCurrency(item.value)}
+                </span>
               </li>
             ))}
           </ul>
