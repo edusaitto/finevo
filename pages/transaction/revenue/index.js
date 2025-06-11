@@ -80,7 +80,7 @@ export default function CreateRevenuePage() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-xl mx-auto bg-white rounded-xl shadow p-6 space-y-6">
         <BackButton />
-        <h1 className="text-2xl font-bold text-gray-800">Nova Transação</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Nova receita</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Título */}
@@ -168,7 +168,7 @@ export default function CreateRevenuePage() {
             type="submit"
             className="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
           >
-            Salvar Entrada
+            Salvar receita
           </button>
         </form>
       </div>
