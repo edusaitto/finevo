@@ -38,6 +38,18 @@ exports.up = (pgm) => {
       default: pgm.func("timezone('utc', now())"),
     },
   });
+
+  pgm.sql(`
+    INSERT INTO users (id, name, email, password, created_at, updated_at)
+    VALUES (
+      gen_random_uuid(),
+      'Usuário Teste',
+      'teste@gmail.com',
+      '$2b$10$FoI74FEYdngqx2T8Nn4a1ejzYuHkqKe8oxcbq5hD08QpT0boDNt6q',
+      timezone('utc', now()),
+      timezone('utc', now())
+    );
+  `);
 };
 
 exports.down = false;

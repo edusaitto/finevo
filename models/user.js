@@ -1,6 +1,20 @@
+import jwt from "jsonwebtoken";
 import database from "infra/database.js";
 import password from "models/password.js";
 import { ValidationError, NotFoundError } from "infra/errors.js";
+
+const SECRET_KEY = process.env.JWT_SECRET;
+
+function genToken(user) {
+  return jwt.sign(
+    {
+      email: user.email,
+      password: user.password,
+    },
+    SECRET_KEY,
+    { expiresIn: "60d" },
+  );
+}
 
 async function findOneByUsername(name) {
   const userFound = await runSelectQuery(name);
@@ -30,6 +44,52 @@ async function findOneByUsername(name) {
     }
 
     return results.rows[0];
+  }
+}
+
+async function login(userInputValues) {
+  const loggedUser = await runSelectUserByEmail(userInputValues.email);
+
+  if (loggedUser == null) {
+    throw new NotFoundError({
+      message: "E-mail e/ou senha incorretos.",
+      action: "Verifique se os dados foram digitados corretamente.",
+    });
+  }
+
+  await hashPasswordInObject(userInputValues);
+  const matchPassword = password.compare(
+    userInputValues.password,
+    loggedUser.password,
+  );
+
+  if (!matchPassword) {
+    throw new NotFoundError({
+      message: "E-mail e/ou senha incorretos.",
+      action: "Verifique se os dados foram digitados corretamente.",
+    });
+  }
+
+  const token = genToken(userInputValues);
+
+  return { token, userId: loggedUser.id };
+
+  async function runSelectUserByEmail(email) {
+    const results = await database.query({
+      text: `
+        SELECT 
+          *
+        FROM
+          users
+        WHERE
+          email = $1
+        LIMIT
+          1
+      ;`,
+      values: [email],
+    });
+
+    return results.rows[0] || null;
   }
 }
 
@@ -157,6 +217,7 @@ async function hashPasswordInObject(userInputValues) {
 }
 
 const user = {
+  login,
   create,
   findOneByUsername,
   update,
