@@ -8,9 +8,9 @@ async function create(categoryInputValues) {
     const results = await database.query({
       text: `
         INSERT INTO 
-          categories (user_id, title, color)
+          categories (user_id, title, color, type)
         VALUES
-          ($1, $2, $3)
+          ($1, $2, $3, $4)
         RETURNING 
           *
         ;`,
@@ -18,6 +18,7 @@ async function create(categoryInputValues) {
         categoryInputValues.userId,
         categoryInputValues.title,
         categoryInputValues.color,
+        categoryInputValues.type,
       ],
     });
 
@@ -25,22 +26,27 @@ async function create(categoryInputValues) {
   }
 }
 
-async function findAllByUserId(userId) {
-  const categories = (await runSelectQuery(userId)) ?? [];
-
+async function findAllByUserId(userId, type) {
+  const categories = (await runSelectQuery(userId, type)) ?? [];
   return categories;
 
-  async function runSelectQuery(userId) {
+  async function runSelectQuery(userId, type) {
+    let query = `
+     SELECT categories.*
+      FROM categories
+      INNER JOIN types ON categories.type = types.id
+      WHERE categories.user_id = $1
+    `;
+    const values = [userId];
+
+    if (type) {
+      query += ` AND types.title = $2`;
+      values.push(type);
+    }
+
     const results = await database.query({
-      text: `
-        SELECT
-          *
-        FROM
-          categories
-        WHERE 
-          user_id = $1
-        ;`,
-      values: [userId],
+      text: query,
+      values,
     });
 
     return results.rows;
