@@ -9,8 +9,8 @@ router.get(getHandler);
 export default router.handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
-  const { userId } = request.query;
-  const totals = await transaction.getTotalsByPeriod(userId);
-  const balance = await transaction.getBalanceAndForecasts(userId);
+  const { userId, month, year } = request.query;
+  const totals = await transaction.getTotalsByPeriod(userId, month, year);
+  const balance = await transaction.getBalanceAndForecasts(userId, month, year);
   return response.status(200).json({ ...totals, ...balance });
 }
