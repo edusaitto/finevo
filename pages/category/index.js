@@ -25,7 +25,6 @@ export default function CreateCategory() {
 
   function handleChange(e) {
     const { value } = e.target;
-    console.log(value);
     setType(value);
   }
 
