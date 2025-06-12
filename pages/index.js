@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import Swal from "sweetalert2";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +23,19 @@ export default function LoginPage() {
     });
 
     const json = await response.json();
+
+    if (response.status != 201) {
+      Swal.fire({
+        title: "Erro!",
+        text: "Usuário e/ou senha incorretos.",
+        icon: "error",
+        confirmButtonText: "OK",
+        toast: true,
+        position: "top-end",
+        timer: 4500,
+        timerProgressBar: true,
+      });
+    }
 
     if (response.status == 201) {
       localStorage.setItem("userId", json.userId);
@@ -62,7 +76,7 @@ export default function LoginPage() {
           </div>
           <button
             type="submit"
-            className="w-full py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+            className="w-full py-2 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 transition-colors"
           >
             Entrar
           </button>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import BackButton from "components/buttons/BackButton";
+import Swal from "sweetalert2";
 
 export default function CreateRevenuePage() {
   const router = useRouter();
@@ -59,7 +60,31 @@ export default function CreateRevenuePage() {
       }),
     });
 
-    if (response.status == "201") {
+    if (response.status != 201) {
+      Swal.fire({
+        title: "Erro!",
+        text: "Houve um erro ao cadastrar a receita!",
+        icon: "success",
+        confirmButtonText: "OK",
+        toast: true,
+        position: "top-end",
+        timer: 4500,
+        timerProgressBar: true,
+      });
+    }
+
+    if (response.status == 201) {
+      Swal.fire({
+        title: "Sucesso!",
+        text: "Receita cadastrada com sucesso!",
+        icon: "success",
+        confirmButtonText: "OK",
+        toast: true,
+        position: "top-end",
+        timer: 4500,
+        timerProgressBar: true,
+      });
+
       router.back();
     }
   }
