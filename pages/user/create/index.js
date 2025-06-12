@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Swal from "sweetalert2";
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -18,7 +19,16 @@ export default function CadastroPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
-      alert("As senhas não coincidem!");
+      Swal.fire({
+        title: "Erro!",
+        text: "As senhas não coincidem!",
+        icon: "error",
+        confirmButtonText: "OK",
+        toast: true,
+        position: "top-end",
+        timer: 4500,
+        timerProgressBar: true,
+      });
       return;
     }
 
@@ -99,7 +109,7 @@ export default function CadastroPage() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className="w-full bg-cyan-600 text-white py-2 rounded hover:bg-cyan-700 transition"
           >
             Cadastrar
           </button>

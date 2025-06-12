@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import BackButton from "components/buttons/BackButton";
+import Swal from "sweetalert2";
 
 export default function CreateCategory() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [type, setType] = useState("");
-  const [color, setColor] = useState("#2563eb");
+  const [color, setColor] = useState("#00acc1");
   const [types, setTypes] = useState([]);
 
   const handleSubmit = async (e) => {
@@ -19,7 +20,16 @@ export default function CreateCategory() {
       body: JSON.stringify({ userId, title, color, type }),
     });
 
-    alert("Categoria cadastrada com sucesso!");
+    Swal.fire({
+      title: "Sucesso!",
+      text: "Categoria cadastrada com sucesso!",
+      icon: "success",
+      confirmButtonText: "OK",
+      toast: true,
+      position: "top-end",
+      timer: 4500,
+      timerProgressBar: true,
+    });
     router.push("/home");
   };
 
@@ -100,7 +110,7 @@ export default function CreateCategory() {
           <div className="flex justify-end">
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition"
+              className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition"
             >
               Cadastrar
             </button>

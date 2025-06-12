@@ -100,9 +100,9 @@ async function create(transactionInputValues) {
     const result = await database.query({
       text: `
         INSERT INTO 
-          transactions (user_id, title, value, type, category, card, bill, paid_at, add_at)
+          transactions (user_id, title, value, type, category, card, bill, paid_at, add_at, fixed)
         VALUES
-          ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *;
       `,
       values: [
@@ -115,6 +115,7 @@ async function create(transactionInputValues) {
         billId || null,
         futureDate || null,
         transactionInputValues.addAt,
+        transactionInputValues.fixed,
       ],
     });
 
@@ -137,14 +138,14 @@ async function getTotalsByPeriod(userId, month, year) {
     SELECT
       SUM(
         CASE 
-          WHEN t.paid_at::date = b.today THEN t.value 
+          WHEN t.add_at::date = b.today THEN t.value 
           ELSE 0 
         END
       ) AS day_total,
 
       SUM(
         CASE 
-          WHEN t.paid_at::date BETWEEN b.week_start AND b.week_end 
+          WHEN t.add_at::date BETWEEN b.week_start AND b.week_end 
           THEN t.value 
           ELSE 0 
         END
@@ -152,7 +153,7 @@ async function getTotalsByPeriod(userId, month, year) {
 
       SUM(
         CASE 
-          WHEN t.paid_at::date BETWEEN b.month_start AND b.month_end 
+          WHEN t.add_at::date BETWEEN b.month_start AND b.month_end 
           THEN t.value 
           ELSE 0 
         END
@@ -164,6 +165,10 @@ async function getTotalsByPeriod(userId, month, year) {
     CROSS JOIN bounds b
     WHERE t.user_id = $3
       AND ty.title = 'expense'
+      AND (
+  t.fixed = false
+  OR (t.fixed = true AND t.paid_at::date = t.add_at::date)
+)
   `;
 
   const values = [month, year, userId];
@@ -240,7 +245,7 @@ async function getBalanceAndForecasts(userId, month, year) {
   const row = result.rows[0];
 
   return {
-    currentBalance: Number(row.current_balance) || 0,
+    currentBalanceCurrentMonth: Number(row.current_balance) || 0,
     forecastCheckpoint: Number(row.forecast_checkpoint) || 0,
     forecastEndOfMonth: Number(row.forecast_end_of_month) || 0,
   };
@@ -310,11 +315,13 @@ async function getMonthExpenses(userId, monthNumber) {
       transactions.*,
       types.title AS type_title,
       categories.title AS category_title,
-      categories.color AS category_color
+      categories.color AS category_color,
+      cards.color AS card_color
     FROM 
       transactions
     JOIN categories ON transactions.category = categories.id
     JOIN types ON categories.type = types.id
+    LEFT JOIN cards ON transactions.card = cards.id
     WHERE 
       transactions.user_id = $1
       AND EXTRACT(MONTH FROM transactions.paid_at) = $2
@@ -329,6 +336,47 @@ async function getMonthExpenses(userId, monthNumber) {
   return result.rows;
 }
 
+async function getRevenueAndExpenses(userId, month, year) {
+  const query = `
+    WITH bounds AS (
+      SELECT 
+        make_date($2, $1, 1)::date AS month_start,
+        (make_date($2, $1, 1) + INTERVAL '1 month - 1 day')::date AS month_end
+    )
+    SELECT
+      SUM(CASE 
+            WHEN ty.title = 'revenue' AND t.paid_at::date BETWEEN b.month_start AND b.month_end 
+            THEN t.value ELSE 0 
+          END) AS total_revenue,
+
+      SUM(CASE 
+            WHEN ty.title = 'expense' AND t.paid_at::date BETWEEN b.month_start AND b.month_end 
+            THEN t.value ELSE 0 
+          END) AS total_expenses
+
+    FROM transactions t
+    JOIN categories c ON t.category = c.id
+    JOIN types ty ON c.type = ty.id
+    CROSS JOIN bounds b
+    WHERE t.user_id = $3
+  `;
+
+  const values = [month, year, userId];
+
+  const result = await database.query({ text: query, values });
+
+  const row = result.rows[0];
+
+  const revenue = Number(row.total_revenue) || 0;
+  const expenses = Number(row.total_expenses) || 0;
+
+  return {
+    revenue,
+    expenses,
+    currentBalance: revenue - expenses,
+  };
+}
+
 const transaction = {
   create,
   findAllByUserId,
@@ -336,6 +384,7 @@ const transaction = {
   getTotalsByPeriod,
   getUserMonths,
   getMonthExpenses,
+  getRevenueAndExpenses,
 };
 
 export default transaction;

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import BackButton from "components/buttons/BackButton";
+import Swal from "sweetalert2";
 
 export default function CreateCard() {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [color, setColor] = useState("#2563eb");
+  const [color, setColor] = useState("#00acc1");
   const [closingDay, setClosingDay] = useState(1);
   const [paymentDay, setPaymentDay] = useState(10);
 
@@ -19,7 +20,16 @@ export default function CreateCard() {
       body: JSON.stringify({ userId, title, color, paymentDay, closingDay }),
     });
 
-    alert("Cartão cadastrado com sucesso!");
+    Swal.fire({
+      title: "Sucesso!",
+      text: "Cartão cadastrado com sucesso!",
+      icon: "success",
+      confirmButtonText: "OK",
+      toast: true,
+      position: "top-end",
+      timer: 4500,
+      timerProgressBar: true,
+    });
     router.push("/home");
   };
 
@@ -95,7 +105,7 @@ export default function CreateCard() {
           <div className="flex justify-end">
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition"
+              className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition"
             >
               Cadastrar
             </button>
