@@ -25,7 +25,6 @@ async function create(transactionInputValues) {
         ? transactionInputValues.paidAt.split("-")[2]
         : 1;
       const paymentDate = new Date(Date.UTC(year, month - 1, paymentDay));
-      console.log("paymentDate" + paymentDate);
 
       // Verifica fatura com base no mês/ano com segurança
       const billResult = await database.query({

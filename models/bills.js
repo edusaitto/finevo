@@ -50,7 +50,6 @@ async function getBillsByUserAndMonth(userId, month, year) {
 
   const values = [userId, month, year];
   const results = await database.query({ text: query, values });
-  console.log(results.rows);
 
   return results.rows;
 }
