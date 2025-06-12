@@ -30,7 +30,7 @@ export default function CreateCard() {
       timer: 4500,
       timerProgressBar: true,
     });
-    router.push("/home");
+    router.push("/");
   };
 
   return (

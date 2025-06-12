@@ -30,7 +30,7 @@ export default function CreateCategory() {
       timer: 4500,
       timerProgressBar: true,
     });
-    router.push("/home");
+    router.push("/");
   };
 
   function handleChange(e) {
