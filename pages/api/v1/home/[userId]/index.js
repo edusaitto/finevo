@@ -12,5 +12,10 @@ async function getHandler(request, response) {
   const { userId, month, year } = request.query;
   const totals = await transaction.getTotalsByPeriod(userId, month, year);
   const balance = await transaction.getBalanceAndForecasts(userId, month, year);
-  return response.status(200).json({ ...totals, ...balance });
+  const transactions = await transaction.getRevenueAndExpenses(
+    userId,
+    month,
+    year,
+  );
+  return response.status(200).json({ ...totals, ...balance, ...transactions });
 }
