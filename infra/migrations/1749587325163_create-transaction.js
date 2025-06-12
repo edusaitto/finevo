@@ -23,6 +23,12 @@ exports.up = (pgm) => {
       notNull: true,
     },
 
+    fixed: {
+      type: "boolean",
+      notNull: true,
+      default: false,
+    },
+
     category: {
       type: "uuid",
       references: '"categories"(id)',
