@@ -1,15 +1,18 @@
 import jwt from "jsonwebtoken";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { CreditCard } from "lucide-react";
+import ActionButtons from "components/buttons/ActionButtons.js";
 
 export default function HomePage() {
   const [selectedMonth, setSelectedMonth] = useState();
   const [bills, setBills] = useState([]);
   const [dailyExpenses, setDailyExpenses] = useState();
   const [weeklyExpenses, setWeeklyExpenses] = useState();
-  const [currentBalance, setCurrentBalance] = useState();
+  const [currentBalanceMonth, setCurrentBalanceMonth] = useState();
   const [forecastCheckpoint, setForecastCheckpoint] = useState();
   const [forecastEndOfMonth, setForecastEndOfMonth] = useState();
+  const [currentRevenue, setCurrentRevenue] = useState();
+  const [currentExpenses, setCurrentExpenses] = useState();
   const [months, setMonths] = useState([]);
 
   const [expenses, setExpenses] = useState([]);
@@ -44,9 +47,15 @@ export default function HomePage() {
       const dataTotals = await responseTotals.json();
       setDailyExpenses(formatCurrency(dataTotals.day));
       setWeeklyExpenses(formatCurrency(dataTotals.week));
-      setCurrentBalance(formatCurrency(dataTotals.currentBalance));
+
+      setCurrentRevenue(formatCurrency(dataTotals.revenue));
+      setCurrentExpenses(formatCurrency(dataTotals.expenses));
+
       setForecastCheckpoint(formatCurrency(dataTotals.forecastCheckpoint));
       setForecastEndOfMonth(formatCurrency(dataTotals.forecastEndOfMonth));
+      setCurrentBalanceMonth(
+        formatCurrency(dataTotals.currentBalanceCurrentMonth),
+      );
     };
 
     if (selectedMonth) {
@@ -82,11 +91,13 @@ export default function HomePage() {
           );
 
           setSelectedMonth(
-            {
-              number: currentMonthNumber,
-              label: currentMonthLabel,
-              year: new Date().getFullYear(),
-            } ?? translatedMonths[0],
+            currentMonthLabel
+              ? {
+                  number: currentMonthNumber,
+                  label: currentMonthLabel,
+                  year: new Date().getFullYear(),
+                }
+              : translatedMonths[0],
           );
         }
       }
@@ -111,6 +122,28 @@ export default function HomePage() {
   }, [selectedMonth]);
 
   useEffect(() => {
+    if (selectedMonth == undefined && months) {
+      if (months.length == 1) {
+        setSelectedMonth(months[0]);
+      } else if (months.length > 1) {
+        const currentMonthNumber = new Date().getMonth() + 1;
+
+        const currentMonthLabel = months.find(
+          (m) => m.monthNumber === currentMonthNumber,
+        );
+
+        setSelectedMonth(
+          {
+            number: currentMonthNumber,
+            label: currentMonthLabel,
+            year: new Date().getFullYear(),
+          } ?? months[0],
+        );
+      }
+    }
+  }, [months, selectedMonth]);
+
+  useEffect(() => {
     const fetchBills = async () => {
       const userId = localStorage.getItem("userId");
       const response = await fetch(
@@ -128,69 +161,57 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Dashboard Financeiro
-        </h1>
+        <div className="flex justify-between">
+          <h1 className="text-3xl font-bold text-gray-800">FINEVO</h1>
 
-        <div className="flex flex-col sm:flex-row justify-end gap-2">
-          {/* Botão cadastrar novo cartão */}
-          <Link href="/cards" className="w-full sm:w-auto">
-            <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
-              Novo cartão
-            </button>
-          </Link>
-
-          {/* Botão cadastrar nova categoria */}
-          <Link href="/category" className="w-full sm:w-auto">
-            <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
-              Nova categoria
-            </button>
-          </Link>
-
-          {/* Botão cadastrar nova receita */}
-          <Link href="/transaction/revenue" className="w-full sm:w-auto">
-            <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
-              Nova receita
-            </button>
-          </Link>
-
-          {/* Botão cadastrar nova transação */}
-          <Link href="/transaction/expense" className="w-full sm:w-auto">
-            <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition">
-              Nova despesa
-            </button>
-          </Link>
+          <ActionButtons />
         </div>
 
         {/* Seção 1 */}
         <section>
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
-            Resumo de saldos
+            Resumo Atual
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card title="Gastos do Dia" value={dailyExpenses} />
             <Card title="Gastos da Semana" value={weeklyExpenses} />
-            <Card title="Saldo Atual" value={currentBalance} />
+            <Card title="Saldo Atual" value={currentBalanceMonth} />
           </div>
         </section>
 
         {/* Aba de troca de mês */}
-        <div className="flex gap-2 mt-6">
-          {months.map((month) => (
-            <button
-              key={month.number}
-              onClick={() => setSelectedMonth(month)}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                selectedMonth != null &&
-                (selectedMonth.number === month.number || months.length == 1)
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 border"
-              }`}
-            >
-              {month.label}
-            </button>
-          ))}
+        <div className="mt-6 overflow-x-auto hide-scrollbar">
+          <div className="flex gap-2 w-max whitespace-nowrap">
+            {months.map((month) => (
+              <button
+                key={month.number}
+                onClick={() => setSelectedMonth(month)}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  selectedMonth != null &&
+                  ((selectedMonth.number === month.number &&
+                    selectedMonth.year === month.year) ||
+                    months.length == 1)
+                    ? "bg-cyan-600 text-white"
+                    : "bg-white text-gray-700 border"
+                }`}
+              >
+                {month.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        <section>
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">
+            Resumo Mensal
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card title="Entradas" value={currentRevenue} />
+            <Card title="Saídas" value={currentExpenses} />
+            <Card title="Checkpoint (Dia 14)" value={forecastCheckpoint} />
+            <Card title="Fim do Mês" value={forecastEndOfMonth} />
+          </div>
+        </section>
 
         {bills.length > 0 && (
           <section className="mt-6">
@@ -230,30 +251,19 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Seção 2 */}
-        <section>
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
-            Gastos por período
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-            <Card title="Checkpoint (Dia 14)" value={forecastCheckpoint} />
-            <Card title="Fim do Mês" value={forecastEndOfMonth} />
-          </div>
-        </section>
-
         {/* Lista de gastos do mês selecionado */}
         {selectedMonth && (
           <section className="bg-white rounded-xl shadow p-4 mt-4">
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row justify-between gap-3">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
                 Gastos de {selectedMonth.label}
               </h3>
 
-              <div className="flex gap-2 mb-3 justify-end">
+              <div className="flex gap-2 justify-end mb-3">
                 <button
                   className={`px-3 py-1 rounded-full text-sm font-medium ${
                     filterType === "all"
-                      ? "bg-blue-600 text-white"
+                      ? "bg-cyan-600 text-white"
                       : "bg-gray-200 text-gray-700"
                   }`}
                   onClick={() => setFilterType("all")}
@@ -284,46 +294,63 @@ export default function HomePage() {
             </div>
 
             {/* Cabeçalho */}
-            <div className="flex text-sm font-semibold text-gray-600 border-b pb-2">
-              <span className="w-1/4">Data</span>
-              <span className="w-1/4">Nome</span>
-              <span className="w-1/4">Categoria</span>
-              <span className="w-1/4 text-right">Valor</span>
+            <div className="overflow-x-auto w-full">
+              <div className="min-w-[600px]">
+                {" "}
+                {/* largura mínima que faça sentido */}
+                <div className="flex text-sm font-semibold text-gray-600 border-b pb-2">
+                  <span className="w-1/4">Data</span>
+                  <span className="w-1/4">Nome</span>
+                  <span className="w-1/4">Categoria</span>
+                  <span className="w-1/4 text-right">Valor</span>
+                </div>
+                {/* Linhas */}
+                <ul className="mt-2 space-y-2">
+                  {selectedMonth &&
+                    filteredExpenses.map((item, index) => {
+                      const isRevenue = item.type_title === "revenue";
+                      const valueColor = isRevenue
+                        ? "text-green-600"
+                        : "text-red-600";
+                      const icon = isRevenue ? "↑" : "↓";
+
+                      return (
+                        <li
+                          key={index}
+                          className="flex items-center text-sm text-gray-700 border-b pb-2"
+                        >
+                          <span className="w-1/4">
+                            {formatDate(item.paid_at)}
+                          </span>
+                          <span className="w-1/4">{item.title}</span>
+                          <span className="w-1/4 flex items-center gap-2">
+                            <span
+                              className="w-3 h-3 rounded-full inline-block"
+                              style={{ backgroundColor: item.category_color }}
+                            ></span>
+                            {item.category_title}
+                          </span>
+                          <span
+                            className={`w-1/4 text-right font-medium flex justify-end items-center gap-1 ${valueColor}`}
+                          >
+                            {item.card_color && (
+                              <div className="flex items-center gap-1 mr-1">
+                                <CreditCard className="w-4 h-4 text-gray-500" />
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full inline-block"
+                                  style={{ backgroundColor: item.card_color }}
+                                ></span>
+                              </div>
+                            )}
+                            {formatCurrency(item.value)}
+                            <span>{icon}</span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                </ul>
+              </div>
             </div>
-
-            {/* Linhas */}
-            <ul className="mt-2 space-y-2">
-              {selectedMonth &&
-                filteredExpenses.map((item, index) => {
-                  const isRevenue = item.type_title === "revenue";
-                  const valueColor = isRevenue
-                    ? "text-green-600"
-                    : "text-red-600";
-                  const icon = isRevenue ? "↑" : "↓";
-
-                  return (
-                    <li
-                      key={index}
-                      className="flex items-center text-sm text-gray-700 border-b pb-2"
-                    >
-                      <span className="w-1/4">{formatDate(item.paid_at)}</span>
-                      <span className="w-1/4">{item.title}</span>
-                      <span className="w-1/4 flex items-center gap-2">
-                        <span
-                          className="w-3 h-3 rounded-full inline-block"
-                          style={{ backgroundColor: item.category_color }}
-                        ></span>
-                        {item.category_title}
-                      </span>
-                      <span
-                        className={`w-1/4 text-right font-medium flex justify-end items-center gap-1 ${valueColor}`}
-                      >
-                        {formatCurrency(item.value)} <span>{icon}</span>
-                      </span>
-                    </li>
-                  );
-                })}
-            </ul>
           </section>
         )}
       </div>
