@@ -96,6 +96,27 @@ export default function CreateCategory() {
           {/* Cor */}
           <div>
             <label className="block mb-1 font-medium text-gray-700">Cor</label>
+            {/* Cores predefinidas */}
+            <div className="flex space-x-2 my-4">
+              <button
+                onClick={() => setColor("#00acc1")}
+                className="w-8 h-8 rounded-full border-2 border-white shadow"
+                style={{ backgroundColor: "#00acc1" }}
+                title="#00acc1"
+              />
+              <button
+                onClick={() => setColor("#16a34a")}
+                className="w-8 h-8 rounded-full border-2 border-white shadow"
+                style={{ backgroundColor: "#16a34a" }}
+                title="#16a34a"
+              />
+              <button
+                onClick={() => setColor("#dc2626")}
+                className="w-8 h-8 rounded-full border-2 border-white shadow"
+                style={{ backgroundColor: "#dc2626" }}
+                title="#dc2626"
+              />
+            </div>
             <div className="flex items-center space-x-3">
               <input
                 type="color"
