@@ -15,6 +15,14 @@ async function create(cardInputValues) {
     year,
   );
 
+  await createBillForCard(
+    newCard.id,
+    cardInputValues.userId,
+    newCard.payment_day,
+    month - 1,
+    year,
+  );
+
   return newCard;
 
   async function runInsertQuery(cardInputValues) {
