@@ -4,15 +4,21 @@ import Link from "next/link";
 
 export default function HomePage() {
   const [selectedMonth, setSelectedMonth] = useState();
+  const [bills, setBills] = useState([]);
   const [dailyExpenses, setDailyExpenses] = useState();
   const [weeklyExpenses, setWeeklyExpenses] = useState();
-  const [monthlyExpenses, setMonthlyExpenses] = useState();
   const [currentBalance, setCurrentBalance] = useState();
   const [forecastCheckpoint, setForecastCheckpoint] = useState();
   const [forecastEndOfMonth, setForecastEndOfMonth] = useState();
   const [months, setMonths] = useState([]);
 
   const [expenses, setExpenses] = useState([]);
+  const [filterType, setFilterType] = useState("all");
+
+  const filteredExpenses = expenses.filter((item) => {
+    if (filterType === "all") return true;
+    return item.type_title === filterType;
+  });
 
   function formatCurrency(value) {
     return new Intl.NumberFormat("pt-BR", {
@@ -38,7 +44,6 @@ export default function HomePage() {
       const dataTotals = await responseTotals.json();
       setDailyExpenses(formatCurrency(dataTotals.day));
       setWeeklyExpenses(formatCurrency(dataTotals.week));
-      setMonthlyExpenses(formatCurrency(dataTotals.month));
       setCurrentBalance(formatCurrency(dataTotals.currentBalance));
       setForecastCheckpoint(formatCurrency(dataTotals.forecastCheckpoint));
       setForecastEndOfMonth(formatCurrency(dataTotals.forecastEndOfMonth));
@@ -102,6 +107,21 @@ export default function HomePage() {
 
     if (selectedMonth != undefined) {
       fetchData();
+    }
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    const fetchBills = async () => {
+      const userId = localStorage.getItem("userId");
+      const response = await fetch(
+        `/api/v1/bills/user/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
+      );
+      const data = await response.json();
+      setBills(data);
+    };
+
+    if (selectedMonth) {
+      fetchBills();
     }
   }, [selectedMonth]);
 
@@ -172,6 +192,44 @@ export default function HomePage() {
           ))}
         </div>
 
+        {bills.length > 0 && (
+          <section className="mt-6">
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">
+              Faturas do Mês
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {bills.map((bill) => (
+                <div
+                  key={bill.id}
+                  className="p-4 bg-white shadow-md rounded-2xl border border-gray-100"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: bill.color || "#ccc" }}
+                    />
+                    <span className="text-sm text-gray-600 font-medium">
+                      {bill.card_title}
+                    </span>
+                  </div>
+
+                  <p className="text-gray-400 text-xs mb-1">
+                    Vencimento:{" "}
+                    {new Date(bill.payment_date).toLocaleDateString("pt-BR", {
+                      timeZone: "UTC",
+                    })}
+                  </p>
+
+                  <p className="text-2xl font-bold text-gray-800 text-right">
+                    {formatCurrency(bill.total_value || 0)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Seção 2 */}
         <section>
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
@@ -186,21 +244,57 @@ export default function HomePage() {
         {/* Lista de gastos do mês selecionado */}
         {selectedMonth && (
           <section className="bg-white rounded-xl shadow p-4 mt-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              Gastos de {selectedMonth.label}
-            </h3>
+            <div className="flex justify-between">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                Gastos de {selectedMonth.label}
+              </h3>
+
+              <div className="flex gap-2 mb-3 justify-end">
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    filterType === "all"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                  onClick={() => setFilterType("all")}
+                >
+                  Todos
+                </button>
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    filterType === "revenue"
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                  onClick={() => setFilterType("revenue")}
+                >
+                  Receitas
+                </button>
+                <button
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    filterType === "expense"
+                      ? "bg-red-600 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                  onClick={() => setFilterType("expense")}
+                >
+                  Despesas
+                </button>
+              </div>
+            </div>
 
             {/* Cabeçalho */}
             <div className="flex text-sm font-semibold text-gray-600 border-b pb-2">
               <span className="w-1/4">Data</span>
-              <span className="w-1/2">Nome</span>
+              <span className="w-1/4">Nome</span>
+              <span className="w-1/4">Categoria</span>
               <span className="w-1/4 text-right">Valor</span>
             </div>
 
             {/* Linhas */}
             <ul className="mt-2 space-y-2">
               {selectedMonth &&
-                expenses.map((item, index) => {
+                filteredExpenses.map((item, index) => {
                   const isRevenue = item.type_title === "revenue";
                   const valueColor = isRevenue
                     ? "text-green-600"
@@ -213,7 +307,14 @@ export default function HomePage() {
                       className="flex items-center text-sm text-gray-700 border-b pb-2"
                     >
                       <span className="w-1/4">{formatDate(item.paid_at)}</span>
-                      <span className="w-1/2">{item.title}</span>
+                      <span className="w-1/4">{item.title}</span>
+                      <span className="w-1/4 flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full inline-block"
+                          style={{ backgroundColor: item.category_color }}
+                        ></span>
+                        {item.category_title}
+                      </span>
                       <span
                         className={`w-1/4 text-right font-medium flex justify-end items-center gap-1 ${valueColor}`}
                       >
