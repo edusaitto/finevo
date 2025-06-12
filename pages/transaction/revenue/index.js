@@ -13,14 +13,17 @@ export default function CreateRevenuePage() {
     type: "revenue",
     addAt: new Date().toISOString().split("T")[0],
     paidAt: new Date().toISOString().split("T")[0],
+    fixed: false,
   });
 
   const selectClass = "w-full border rounded px-3 py-2 pr-8";
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
 
-    if (name === "value") {
+    if (type === "checkbox") {
+      setForm((prev) => ({ ...prev, [name]: checked }));
+    } else if (name === "value") {
       const numeric = value.replace(/\D/g, "");
       const float = (parseInt(numeric, 10) / 100).toFixed(2);
       setForm((prev) => ({
@@ -52,6 +55,7 @@ export default function CreateRevenuePage() {
         type: form.type,
         addAt: form.addAt,
         paidAt: form.paidAt,
+        fixed: form.fixed,
       }),
     });
 
@@ -135,20 +139,6 @@ export default function CreateRevenuePage() {
             </select>
           </div>
 
-          {/* Data de Registro */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Data de Registro
-            </label>
-            <input
-              type="date"
-              name="addAt"
-              value={form.addAt}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-
           {/* Data de Pagamento */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -161,6 +151,20 @@ export default function CreateRevenuePage() {
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
+          </div>
+
+          {/* Checkbox de fixo */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="fixed"
+              checked={form.fixed}
+              onChange={handleChange}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="fixed" className="text-sm text-gray-700">
+              É fixo?
+            </label>
           </div>
 
           {/* Submit */}

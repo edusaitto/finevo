@@ -1,7 +1,7 @@
 import database from "infra/database.js";
 
 async function create(transactionInputValues) {
-  const { repeat = 1, card } = transactionInputValues;
+  const { repeat = 1, creditCard } = transactionInputValues;
 
   const type = await database.query({
     text: `SELECT * FROM types WHERE title = $1 LIMIT 1;`,
@@ -10,8 +10,9 @@ async function create(transactionInputValues) {
 
   const typeId = type.rows[0].id;
   const createdTransactions = [];
+  const _repeat = transactionInputValues.fixed ? 12 : repeat;
 
-  for (let i = 0; i < repeat; i++) {
+  for (let i = 0; i < _repeat; i++) {
     const futureDate = new Date(transactionInputValues.paidAt);
     futureDate.setMonth(futureDate.getMonth() + i);
     const month = futureDate.getMonth() + 1;
@@ -19,23 +20,40 @@ async function create(transactionInputValues) {
 
     let billId = transactionInputValues.bill;
 
-    if (card) {
-      // Verifica se a fatura já existe para o mês/ano
+    if (creditCard) {
+      const paymentDay = transactionInputValues.paidAt
+        ? transactionInputValues.paidAt.split("-")[2]
+        : 1;
+      const paymentDate = new Date(Date.UTC(year, month - 1, paymentDay));
+
+      // Verifica fatura com base no mês/ano com segurança
       const billResult = await database.query({
         text: `
-          SELECT id FROM bills
-          WHERE card_id = $1 AND EXTRACT(MONTH FROM payment_date) = $2 AND EXTRACT(YEAR FROM payment_date) = $3
-          LIMIT 1;
-        `,
-        values: [card, month, year],
+      SELECT id FROM bills
+      WHERE card_id = $1 
+        AND TO_CHAR(payment_date, 'MM-YYYY') = TO_CHAR($2::timestamptz, 'MM-YYYY')
+      LIMIT 1;
+    `,
+        values: [creditCard, paymentDate],
       });
 
       if (billResult.rowCount > 0) {
         billId = billResult.rows[0].id;
       } else {
-        // Cria nova fatura se não existir
-        const paymentDay = transactionInputValues.paymentDay || 1;
-        const paymentDate = new Date(year, month - 1, paymentDay);
+        const title = paymentDate.toLocaleDateString("pt-BR", {
+          month: "long",
+          year: "numeric",
+        });
+
+        const fixedExpensesResult = await database.query({
+          text: `
+            SELECT * FROM transactions
+            WHERE card = $1 AND fixed = true AND user_id = $2
+          `,
+          values: [creditCard, transactionInputValues.userId],
+        });
+
+        const fixedExpenses = fixedExpensesResult.rows;
 
         const newBill = await database.query({
           text: `
@@ -44,14 +62,37 @@ async function create(transactionInputValues) {
             RETURNING id;
           `,
           values: [
-            card,
+            creditCard,
             transactionInputValues.userId,
-            `${month}/${year}`,
+            title,
             paymentDate,
           ],
         });
 
         billId = newBill.rows[0].id;
+
+        for (const expense of fixedExpenses) {
+          await database.query({
+            text: `
+              INSERT INTO transactions 
+              (user_id, title, value, type, category, card, bill, paid_at, add_at, fixed)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              RETURNING *;
+            `,
+            values: [
+              expense.user_id,
+              expense.title,
+              expense.value,
+              expense.type,
+              expense.category,
+              expense.card,
+              billId,
+              paymentDate,
+              new Date().toISOString(),
+              true,
+            ],
+          });
+        }
       }
     }
 
@@ -70,7 +111,7 @@ async function create(transactionInputValues) {
         transactionInputValues.value,
         typeId,
         transactionInputValues.category,
-        card || null,
+        creditCard || null,
         billId || null,
         futureDate || null,
         transactionInputValues.addAt,
@@ -249,14 +290,13 @@ async function getUserMonths(userId) {
       EXTRACT(YEAR FROM paid_at)::int AS year
     FROM transactions
     WHERE user_id = $1
-    ORDER BY month_number ASC, year ASC
+    ORDER BY year ASC, month_number ASC
   `;
 
   const values = [userId];
 
   const result = await database.query({ text: query, values });
 
-  console.log(result.rows);
   return result.rows.map((row) => ({
     monthNumber: row.month_number,
     monthName: row.month_name.trim(),
@@ -265,11 +305,12 @@ async function getUserMonths(userId) {
 }
 
 async function getMonthExpenses(userId, monthNumber) {
-  console.log(monthNumber);
   const query = `
     SELECT 
       transactions.*,
-      types.title AS type_title
+      types.title AS type_title,
+      categories.title AS category_title,
+      categories.color AS category_color
     FROM 
       transactions
     JOIN categories ON transactions.category = categories.id
