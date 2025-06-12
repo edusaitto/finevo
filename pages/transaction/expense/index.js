@@ -18,14 +18,17 @@ export default function CreateExpensePage() {
     creditCard: "",
     bill: "",
     repeat: 1,
+    fixed: false,
   });
 
   const selectClass = "w-full border rounded px-3 py-2 pr-8";
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
 
-    if (name === "value") {
+    if (type === "checkbox") {
+      setForm((prev) => ({ ...prev, [name]: checked }));
+    } else if (name === "value") {
       const numeric = value.replace(/\D/g, "");
       const float = (parseInt(numeric, 10) / 100).toFixed(2);
       setForm((prev) => ({
@@ -60,6 +63,7 @@ export default function CreateExpensePage() {
         creditCard: form.creditCard,
         bill: form.bill,
         repeat: form.repeat,
+        fixed: form.fixed,
       }),
     });
 
@@ -175,20 +179,6 @@ export default function CreateExpensePage() {
             </select>
           </div>
 
-          {/* Data de Registro */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Data de Registro
-            </label>
-            <input
-              type="date"
-              name="addAt"
-              value={form.addAt}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Forma de pagamento
@@ -207,6 +197,37 @@ export default function CreateExpensePage() {
               ))}
             </select>
           </div>
+
+          {/* Checkbox de fixo */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="fixed"
+              checked={form.fixed}
+              onChange={handleChange}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="fixed" className="text-sm text-gray-700">
+              É fixo?
+            </label>
+          </div>
+
+          {!form.fixed && (
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">
+                {form.creditCard ? "Parcelas" : "Recorrência"}
+              </label>
+              <input
+                name="repeat"
+                type="number"
+                min="1"
+                max="24"
+                value={form.repeat}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
 
           {form.creditCard && (
             <>
@@ -228,21 +249,20 @@ export default function CreateExpensePage() {
                   ))}
                 </select>
               </div>
-              {/* Repetições / Parcelas */}
+
+              {/* Data de Registro da despesa */}
               <div>
-                <label className="block mb-1 font-medium text-gray-700">
-                  Parcelas
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data de Registro da Despesa
                 </label>
                 <input
-                  name="repeat"
-                  type="number"
-                  min="1"
-                  max="24"
-                  value={form.repeat}
+                  type="date"
+                  name="addAt"
+                  value={form.addAt}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border rounded px-3 py-2"
                 />
-              </div>{" "}
+              </div>
             </>
           )}
 
