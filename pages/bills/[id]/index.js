@@ -22,7 +22,7 @@ export default function BillDetailPage() {
         <BackButton />
         <h1 className="text-2xl font-bold">Transações da Fatura</h1>
         {transactions
-          .filter((tx) => tx && tx.type_title)
+          .filter((tx) => tx)
           .map((tx) => (
             <TransactionCard key={tx.id} item={tx} />
           ))}

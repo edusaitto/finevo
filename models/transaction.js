@@ -304,28 +304,28 @@ async function getMonthExpenses(userId, monthNumber, yearNumber) {
   const query = `
     -- Transações agrupadas por bill
     SELECT 
-      MIN(transactions.paid_at) AS paid_at,
-      bills.id AS id,
-      bills.title AS title,
-      SUM(transactions.value) AS value,
+      MIN(t.paid_at) AS paid_at,
+      b.id AS id,
+      b.title AS title,
+      SUM(t.value) AS value,
       true AS grouped,
-      types.title AS type_title,
-      categories.title AS category_title,
-      categories.color AS category_color,
-      cards.title AS card_title,
-      cards.color AS card_color,
-      bills.title AS bill_title
+      STRING_AGG(DISTINCT ty.title, ', ') AS type_title,
+      STRING_AGG(DISTINCT c.title, ', ') AS category_title,
+      STRING_AGG(DISTINCT c.color, ', ') AS category_color,
+      ca.title AS card_title,
+      ca.color AS card_color,
+      b.title AS bill_title
     FROM 
-      transactions
-    JOIN categories ON transactions.category = categories.id
-    JOIN types ON categories.type = types.id
-    JOIN bills ON transactions.bill = bills.id
-    LEFT JOIN cards ON transactions.card = cards.id
+      transactions t
+    JOIN categories c ON t.category = c.id
+    JOIN types ty ON c.type = ty.id
+    JOIN bills b ON t.bill = b.id
+    LEFT JOIN cards ca ON t.card = ca.id
     WHERE 
-      transactions.user_id = $1
-      AND EXTRACT(MONTH FROM transactions.paid_at) = $2
-      AND EXTRACT(YEAR FROM transactions.paid_at) = $3
-    GROUP BY bills.id, types.title, categories.title, categories.color, cards.title, cards.color
+      t.user_id = $1
+      AND EXTRACT(MONTH FROM t.paid_at) = $2
+      AND EXTRACT(YEAR FROM t.paid_at) = $3
+    GROUP BY b.id, ca.title, ca.color
 
     UNION ALL
 
