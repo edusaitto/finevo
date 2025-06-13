@@ -1,11 +1,10 @@
 import jwt from "jsonwebtoken";
 import { useEffect, useState } from "react";
-import { CreditCard } from "lucide-react";
+import { TransactionCard } from "./home";
 import ActionButtons from "components/buttons/ActionButtons.js";
 
 export default function HomePage() {
   const [selectedMonth, setSelectedMonth] = useState();
-  const [bills, setBills] = useState([]);
   const [dailyExpenses, setDailyExpenses] = useState();
   const [weeklyExpenses, setWeeklyExpenses] = useState();
   const [currentBalanceMonth, setCurrentBalanceMonth] = useState();
@@ -28,13 +27,6 @@ export default function HomePage() {
       style: "currency",
       currency: "BRL",
     }).format(value);
-  }
-
-  function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("pt-BR", {
-      timeZone: "UTC",
-    });
   }
 
   useEffect(() => {
@@ -143,21 +135,6 @@ export default function HomePage() {
     }
   }, [months, selectedMonth]);
 
-  useEffect(() => {
-    const fetchBills = async () => {
-      const userId = localStorage.getItem("userId");
-      const response = await fetch(
-        `/api/v1/bills/user/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
-      );
-      const data = await response.json();
-      setBills(data);
-    };
-
-    if (selectedMonth) {
-      fetchBills();
-    }
-  }, [selectedMonth]);
-
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -213,50 +190,12 @@ export default function HomePage() {
           </div>
         </section>
 
-        {bills.length > 0 && (
-          <section className="mt-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-              Faturas do Mês
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {bills.map((bill) => (
-                <div
-                  key={bill.id}
-                  className="p-4 bg-white shadow-md rounded-2xl border border-gray-100"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: bill.color || "#ccc" }}
-                    />
-                    <span className="text-sm text-gray-600 font-medium">
-                      {bill.card_title}
-                    </span>
-                  </div>
-
-                  <p className="text-gray-400 text-xs mb-1">
-                    Vencimento:{" "}
-                    {new Date(bill.payment_date).toLocaleDateString("pt-BR", {
-                      timeZone: "UTC",
-                    })}
-                  </p>
-
-                  <p className="text-2xl font-bold text-gray-800 text-right">
-                    {formatCurrency(bill.total_value || 0)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Lista de gastos do mês selecionado */}
         {selectedMonth && (
           <section className="bg-white rounded-xl shadow p-4 mt-4">
             <div className="flex flex-col sm:flex-row justify-between gap-3">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Gastos de {selectedMonth.label}
+                Transações de {selectedMonth.label.toLowerCase()}
               </h3>
 
               <div className="flex gap-2 justify-end mb-3">
@@ -293,62 +232,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Cabeçalho */}
+            {/* Lista de cards das transações */}
             <div className="overflow-x-auto w-full">
-              <div className="min-w-[600px]">
-                {" "}
-                {/* largura mínima que faça sentido */}
-                <div className="flex text-sm font-semibold text-gray-600 border-b pb-2">
-                  <span className="w-1/4">Data</span>
-                  <span className="w-1/4">Nome</span>
-                  <span className="w-1/4">Categoria</span>
-                  <span className="w-1/4 text-right">Valor</span>
-                </div>
-                {/* Linhas */}
-                <ul className="mt-2 space-y-2">
-                  {selectedMonth &&
-                    filteredExpenses.map((item, index) => {
-                      const isRevenue = item.type_title === "revenue";
-                      const valueColor = isRevenue
-                        ? "text-green-600"
-                        : "text-red-600";
-                      const icon = isRevenue ? "↑" : "↓";
-
-                      return (
-                        <li
-                          key={index}
-                          className="flex items-center text-sm text-gray-700 border-b pb-2"
-                        >
-                          <span className="w-1/4">
-                            {formatDate(item.paid_at)}
-                          </span>
-                          <span className="w-1/4">{item.title}</span>
-                          <span className="w-1/4 flex items-center gap-2">
-                            <span
-                              className="w-3 h-3 rounded-full inline-block"
-                              style={{ backgroundColor: item.category_color }}
-                            ></span>
-                            {item.category_title}
-                          </span>
-                          <span
-                            className={`w-1/4 text-right font-medium flex justify-end items-center gap-1 ${valueColor}`}
-                          >
-                            {item.card_color && (
-                              <div className="flex items-center gap-1 mr-1">
-                                <CreditCard className="w-4 h-4 text-gray-500" />
-                                <span
-                                  className="w-2.5 h-2.5 rounded-full inline-block"
-                                  style={{ backgroundColor: item.card_color }}
-                                ></span>
-                              </div>
-                            )}
-                            {formatCurrency(item.value)}
-                            <span>{icon}</span>
-                          </span>
-                        </li>
-                      );
-                    })}
-                </ul>
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {selectedMonth &&
+                  filteredExpenses.map((item, index) => (
+                    <TransactionCard key={index} item={item} />
+                  ))}
               </div>
             </div>
           </section>
