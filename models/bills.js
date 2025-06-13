@@ -22,6 +22,28 @@ async function getCardBills(cardId) {
   }
 }
 
+async function getTransactionsFromBill(billId) {
+  const transactions = (await runSelectQuery(billId)) ?? [];
+  return transactions;
+
+  async function runSelectQuery(billId) {
+    const query = `
+      SELECT *
+      FROM transactions
+      WHERE bill = $1
+    `;
+
+    const values = [billId];
+
+    const results = await database.query({
+      text: query,
+      values,
+    });
+
+    return results.rows;
+  }
+}
+
 async function getBillsByUserAndMonth(userId, month, year) {
   const query = `
     SELECT 
@@ -56,6 +78,7 @@ async function getBillsByUserAndMonth(userId, month, year) {
 
 const bill = {
   getCardBills,
+  getTransactionsFromBill,
   getBillsByUserAndMonth,
 };
 
