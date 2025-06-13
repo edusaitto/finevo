@@ -1,5 +1,65 @@
 import database from "infra/database.js";
 
+async function findAllByUserId(userId, type) {
+  const transactions = (await runSelectQuery(userId, type)) ?? [];
+  return transactions;
+
+  async function runSelectQuery(userId, type) {
+    let query = `
+      SELECT 
+        transactions.*, 
+        types.title AS type_title
+      FROM 
+        transactions
+      JOIN 
+        categories ON transactions.category = categories.id
+      JOIN 
+        types ON categories.type = types.id
+      WHERE 
+        transactions.user_id = $1
+    `;
+    const values = [userId];
+
+    if (type) {
+      query += ` AND type = $2`;
+      values.push(type);
+    }
+
+    query += ` ORDER BY transactions.paid_at DESC`;
+
+    const results = await database.query({
+      text: query,
+      values,
+    });
+
+    return results.rows;
+  }
+}
+
+async function findOneById(id) {
+  const transaction = (await runSelectQuery(id)) ?? [];
+  return transaction;
+
+  async function runSelectQuery(id) {
+    let query = `
+      SELECT 
+        *
+      FROM 
+        transactions
+      WHERE 
+        id = $1
+    `;
+    const values = [id];
+
+    const results = await database.query({
+      text: query,
+      values,
+    });
+
+    return results.rows[0];
+  }
+}
+
 async function create(transactionInputValues) {
   const { repeat = 1, creditCard } = transactionInputValues;
 
@@ -26,7 +86,6 @@ async function create(transactionInputValues) {
         : 1;
       const paymentDate = new Date(Date.UTC(year, month - 1, paymentDay));
 
-      // Verifica fatura com base no mês/ano com segurança
       const billResult = await database.query({
         text: `
           SELECT id FROM bills
@@ -46,16 +105,6 @@ async function create(transactionInputValues) {
           year: "numeric",
         });
 
-        // const fixedExpensesResult = await database.query({
-        //   text: `
-        //     SELECT * FROM transactions
-        //     WHERE card = $1 AND fixed = true AND user_id = $2
-        //   `,
-        //   values: [creditCard, transactionInputValues.userId],
-        // });
-
-        // const fixedExpenses = fixedExpensesResult.rows;
-
         const newBill = await database.query({
           text: `
             INSERT INTO bills (card_id, user_id, title, payment_date)
@@ -71,31 +120,6 @@ async function create(transactionInputValues) {
         });
 
         billId = newBill.rows[0].id;
-
-        // for (const expense of fixedExpenses) {
-        //   if (billId != expense.bill) {
-        //     await database.query({
-        //       text: `
-        //       INSERT INTO transactions
-        //       (user_id, title, value, type, category, card, bill, paid_at, add_at, fixed)
-        //       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        //       RETURNING *;
-        //     `,
-        //       values: [
-        //         expense.user_id,
-        //         expense.title,
-        //         expense.value,
-        //         expense.type,
-        //         expense.category,
-        //         expense.card,
-        //         billId,
-        //         paymentDate,
-        //         new Date().toISOString(),
-        //         true,
-        //       ],
-        //     });
-        //   }
-        // }
       }
     }
 
@@ -254,42 +278,6 @@ async function getBalanceAndForecasts(userId, month, year) {
   };
 }
 
-async function findAllByUserId(userId, type) {
-  const transactions = (await runSelectQuery(userId, type)) ?? [];
-  return transactions;
-
-  async function runSelectQuery(userId, type) {
-    let query = `
-      SELECT 
-        transactions.*, 
-        types.title AS type_title
-      FROM 
-        transactions
-      JOIN 
-        categories ON transactions.category = categories.id
-      JOIN 
-        types ON categories.type = types.id
-      WHERE 
-        transactions.user_id = $1
-    `;
-    const values = [userId];
-
-    if (type) {
-      query += ` AND type = $2`;
-      values.push(type);
-    }
-
-    query += ` ORDER BY transactions.paid_at DESC`;
-
-    const results = await database.query({
-      text: query,
-      values,
-    });
-
-    return results.rows;
-  }
-}
-
 async function getUserMonths(userId) {
   const query = `
     SELECT DISTINCT 
@@ -314,12 +302,46 @@ async function getUserMonths(userId) {
 
 async function getMonthExpenses(userId, monthNumber, yearNumber) {
   const query = `
+    -- Transações agrupadas por bill
     SELECT 
-      transactions.*,
+      MIN(transactions.paid_at) AS paid_at,
+      bills.id AS id,
+      bills.title AS title,
+      SUM(transactions.value) AS value,
+      true AS grouped,
       types.title AS type_title,
       categories.title AS category_title,
       categories.color AS category_color,
-      cards.color AS card_color
+      cards.title AS card_title,
+      cards.color AS card_color,
+      bills.title AS bill_title
+    FROM 
+      transactions
+    JOIN categories ON transactions.category = categories.id
+    JOIN types ON categories.type = types.id
+    JOIN bills ON transactions.bill = bills.id
+    LEFT JOIN cards ON transactions.card = cards.id
+    WHERE 
+      transactions.user_id = $1
+      AND EXTRACT(MONTH FROM transactions.paid_at) = $2
+      AND EXTRACT(YEAR FROM transactions.paid_at) = $3
+    GROUP BY bills.id, types.title, categories.title, categories.color, cards.title, cards.color
+
+    UNION ALL
+
+    -- Transações sem bill, retornadas normalmente
+    SELECT 
+      transactions.paid_at,
+      transactions.id,
+      transactions.title,
+      transactions.value,
+      false AS grouped,
+      types.title AS type_title,
+      categories.title AS category_title,
+      categories.color AS category_color,
+      cards.title AS card_title,
+      cards.color AS card_color,
+      NULL AS bill_title
     FROM 
       transactions
     JOIN categories ON transactions.category = categories.id
@@ -327,16 +349,15 @@ async function getMonthExpenses(userId, monthNumber, yearNumber) {
     LEFT JOIN cards ON transactions.card = cards.id
     WHERE 
       transactions.user_id = $1
+      AND transactions.bill IS NULL
       AND EXTRACT(MONTH FROM transactions.paid_at) = $2
       AND EXTRACT(YEAR FROM transactions.paid_at) = $3
-    ORDER BY 
-      transactions.paid_at DESC
+
+    ORDER BY paid_at DESC
   `;
 
   const values = [userId, monthNumber, yearNumber];
-
   const result = await database.query({ text: query, values });
-
   return result.rows;
 }
 
@@ -382,8 +403,9 @@ async function getRevenueAndExpenses(userId, month, year) {
 }
 
 const transaction = {
-  create,
   findAllByUserId,
+  findOneById,
+  create,
   getBalanceAndForecasts,
   getTotalsByPeriod,
   getUserMonths,
