@@ -29,12 +29,12 @@ export default function ActionButtons() {
               </button>
             </Link>
             <Link href="/transaction/revenue">
-              <button className="w-full bg-cyan-600 text-white px-4 py-2 rounded-xl hover:bg-cyan-700 transition text-sm text-left">
+              <button className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-cyan-700 transition text-sm text-left">
                 Nova receita
               </button>
             </Link>
             <Link href="/transaction/expense">
-              <button className="w-full bg-cyan-600 text-white px-4 py-2 rounded-xl hover:bg-cyan-700 transition text-sm text-left">
+              <button className="w-full bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-cyan-700 transition text-sm text-left">
                 Nova despesa
               </button>
             </Link>
@@ -55,12 +55,12 @@ export default function ActionButtons() {
           </button>
         </Link>
         <Link href="/transaction/revenue">
-          <button className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition">
+          <button className="bg-green-600 text-white px-4 py-2 rounded-xl shadow hover:bg-green-700 transition">
             Nova receita
           </button>
         </Link>
         <Link href="/transaction/expense">
-          <button className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition">
+          <button className="bg-red-500 text-white px-4 py-2 rounded-xl shadow hover:bg-red-600 transition">
             Nova despesa
           </button>
         </Link>
