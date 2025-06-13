@@ -110,7 +110,7 @@ export default function HomePage() {
     const fetchData = async () => {
       const userId = localStorage.getItem("userId");
       const response = await fetch(
-        `/api/v1/transaction/user/${userId}?monthNumber=${selectedMonth.number}`,
+        `/api/v1/transaction/user/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
       );
       const data = await response.json();
       if (data) setExpenses(data);

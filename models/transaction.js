@@ -29,11 +29,12 @@ async function create(transactionInputValues) {
       // Verifica fatura com base no mês/ano com segurança
       const billResult = await database.query({
         text: `
-      SELECT id FROM bills
-      WHERE card_id = $1 
-        AND TO_CHAR(payment_date, 'MM-YYYY') = TO_CHAR($2::timestamptz, 'MM-YYYY')
-      LIMIT 1;
-    `,
+          SELECT id FROM bills
+          WHERE card_id = $1 
+            AND EXTRACT(MONTH FROM payment_date) = EXTRACT(MONTH FROM $2::date)
+            AND EXTRACT(YEAR FROM payment_date) = EXTRACT(YEAR FROM $2::date)
+          LIMIT 1;
+        `,
         values: [creditCard, paymentDate],
       });
 
@@ -45,15 +46,15 @@ async function create(transactionInputValues) {
           year: "numeric",
         });
 
-        const fixedExpensesResult = await database.query({
-          text: `
-            SELECT * FROM transactions
-            WHERE card = $1 AND fixed = true AND user_id = $2
-          `,
-          values: [creditCard, transactionInputValues.userId],
-        });
+        // const fixedExpensesResult = await database.query({
+        //   text: `
+        //     SELECT * FROM transactions
+        //     WHERE card = $1 AND fixed = true AND user_id = $2
+        //   `,
+        //   values: [creditCard, transactionInputValues.userId],
+        // });
 
-        const fixedExpenses = fixedExpensesResult.rows;
+        // const fixedExpenses = fixedExpensesResult.rows;
 
         const newBill = await database.query({
           text: `
@@ -71,28 +72,30 @@ async function create(transactionInputValues) {
 
         billId = newBill.rows[0].id;
 
-        for (const expense of fixedExpenses) {
-          await database.query({
-            text: `
-              INSERT INTO transactions 
-              (user_id, title, value, type, category, card, bill, paid_at, add_at, fixed)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-              RETURNING *;
-            `,
-            values: [
-              expense.user_id,
-              expense.title,
-              expense.value,
-              expense.type,
-              expense.category,
-              expense.card,
-              billId,
-              paymentDate,
-              new Date().toISOString(),
-              true,
-            ],
-          });
-        }
+        // for (const expense of fixedExpenses) {
+        //   if (billId != expense.bill) {
+        //     await database.query({
+        //       text: `
+        //       INSERT INTO transactions
+        //       (user_id, title, value, type, category, card, bill, paid_at, add_at, fixed)
+        //       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        //       RETURNING *;
+        //     `,
+        //       values: [
+        //         expense.user_id,
+        //         expense.title,
+        //         expense.value,
+        //         expense.type,
+        //         expense.category,
+        //         expense.card,
+        //         billId,
+        //         paymentDate,
+        //         new Date().toISOString(),
+        //         true,
+        //       ],
+        //     });
+        //   }
+        // }
       }
     }
 
@@ -309,7 +312,7 @@ async function getUserMonths(userId) {
   }));
 }
 
-async function getMonthExpenses(userId, monthNumber) {
+async function getMonthExpenses(userId, monthNumber, yearNumber) {
   const query = `
     SELECT 
       transactions.*,
@@ -325,11 +328,12 @@ async function getMonthExpenses(userId, monthNumber) {
     WHERE 
       transactions.user_id = $1
       AND EXTRACT(MONTH FROM transactions.paid_at) = $2
+      AND EXTRACT(YEAR FROM transactions.paid_at) = $3
     ORDER BY 
       transactions.paid_at DESC
   `;
 
-  const values = [userId, monthNumber];
+  const values = [userId, monthNumber, yearNumber];
 
   const result = await database.query({ text: query, values });
 
