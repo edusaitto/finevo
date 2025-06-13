@@ -5,6 +5,9 @@ import Swal from "sweetalert2";
 
 export default function CreateExpensePage() {
   const router = useRouter();
+  const { id } = router.query;
+  const isEditing = Boolean(id);
+
   const [userId, setUserId] = useState(null);
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
@@ -48,8 +51,11 @@ export default function CreateExpensePage() {
       form.value.replace(/[^0-9,-]+/g, "").replace(",", "."),
     );
 
-    const response = await fetch(`/api/v1/transaction`, {
-      method: "POST",
+    const method = isEditing ? "PUT" : "POST";
+    const url = isEditing ? `/api/v1/transaction/${id}` : "/api/v1/transaction";
+
+    const response = await fetch(url, {
+      method: method,
       headers: {
         "Content-Type": "application/json",
       },
@@ -138,18 +144,44 @@ export default function CreateExpensePage() {
     if (form.bill) {
       const _bill = bills.find((b) => b.id === form.bill);
 
-      setForm((prev) => ({
-        ...prev,
-        paidAt: _bill.payment_date.split("T")[0],
-      }));
+      if (_bill) {
+        setForm((prev) => ({
+          ...prev,
+          paidAt: _bill.payment_date.split("T")[0],
+        }));
+      }
     }
   }, [form.bill, bills]);
+
+  useEffect(() => {
+    if (isEditing && userId) {
+      fetch(`/api/v1/transaction/${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setForm({
+            ...form,
+            title: data.title,
+            value: `R$ ${data.value.replace(".", ",")}`,
+            category: data.category,
+            type: data.type,
+            addAt: data.add_at?.split("T")[0],
+            paidAt: data.paid_at?.split("T")[0],
+            creditCard: data.card,
+            bill: data.bill,
+            repeat: data.repeat || 1,
+            fixed: data.fixed,
+          });
+        });
+    }
+  }, [id, userId]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-xl mx-auto bg-white rounded-xl shadow p-6 space-y-6">
         <BackButton />
-        <h1 className="text-2xl font-bold text-gray-800">Nova despesa</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {isEditing ? "Editar despesa" : "Nova despesa"}
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Título */}
@@ -308,7 +340,7 @@ export default function CreateExpensePage() {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
+            className="w-full bg-cyan-600 text-white py-2 rounded-xl hover:bg-cyan-700 transition"
           >
             Salvar despesa
           </button>
