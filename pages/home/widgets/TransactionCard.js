@@ -4,6 +4,9 @@ import React from "react";
 
 export default function TransactionCard({ item }) {
   const router = useRouter();
+
+  if (!item) return null;
+
   const isRevenue = item.type_title === "revenue";
   const valueColor = isRevenue ? "text-green-600" : "text-red-600";
   const icon = isRevenue ? "↑" : "↓";

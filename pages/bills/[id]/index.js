@@ -21,9 +21,11 @@ export default function BillDetailPage() {
       <div className="max-w-2xl mx-auto bg-white rounded-xl shadow p-4 space-y-4">
         <BackButton />
         <h1 className="text-2xl font-bold">Transações da Fatura</h1>
-        {transactions.map((tx) => (
-          <TransactionCard key={tx.id} item={tx} />
-        ))}
+        {transactions
+          .filter((tx) => tx && tx.type_title)
+          .map((tx) => (
+            <TransactionCard key={tx.id} item={tx} />
+          ))}
       </div>
     </div>
   );
