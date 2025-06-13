@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import BackButton from "/components/buttons/BackButton";
-import { TransactionCard } from "/pages/home";
+import TransactionCard from "/pages/home/widgets/TransactionCard.js";
 
 export default function BillDetailPage() {
   const router = useRouter();

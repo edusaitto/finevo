@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { useEffect, useState } from "react";
-import { TransactionCard } from "./home";
+import TransactionCard from "./home/widgets/TransactionCard.js";
 import ActionButtons from "components/buttons/ActionButtons.js";
 
 export default function HomePage() {
