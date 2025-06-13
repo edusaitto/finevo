@@ -99,18 +99,21 @@ export default function CreateCategory() {
             {/* Cores predefinidas */}
             <div className="flex space-x-2 my-4">
               <button
+                type="button"
                 onClick={() => setColor("#00acc1")}
                 className="w-8 h-8 rounded-full border-2 border-white shadow"
                 style={{ backgroundColor: "#00acc1" }}
                 title="#00acc1"
               />
               <button
+                type="button"
                 onClick={() => setColor("#16a34a")}
                 className="w-8 h-8 rounded-full border-2 border-white shadow"
                 style={{ backgroundColor: "#16a34a" }}
                 title="#16a34a"
               />
               <button
+                type="button"
                 onClick={() => setColor("#dc2626")}
                 className="w-8 h-8 rounded-full border-2 border-white shadow"
                 style={{ backgroundColor: "#dc2626" }}
