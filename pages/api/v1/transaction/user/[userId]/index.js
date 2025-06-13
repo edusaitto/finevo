@@ -10,10 +10,10 @@ export default router.handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
   let transactions;
-  const { userId, monthNumber } = request.query;
+  const { userId, month, year } = request.query;
 
-  if (monthNumber) {
-    transactions = await transaction.getMonthExpenses(userId, monthNumber);
+  if (month && year) {
+    transactions = await transaction.getMonthExpenses(userId, month, year);
   } else {
     transactions = await transaction.findAllByUserId(userId);
   }
