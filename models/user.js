@@ -93,7 +93,6 @@ async function login(userInputValues) {
 }
 
 async function create(userInputValues) {
-  await validateUniqueUsername(userInputValues.name);
   await validateUniqueEmail(userInputValues.email);
   await hashPasswordInObject(userInputValues);
 
@@ -123,10 +122,6 @@ async function create(userInputValues) {
 
 async function update(name, userInputValues) {
   const currentUser = await findOneByUsername(name);
-
-  if ("name" in userInputValues) {
-    await validateUniqueUsername(userInputValues.name);
-  }
 
   if ("email" in userInputValues) {
     await validateUniqueEmail(userInputValues.email);
@@ -165,27 +160,6 @@ async function update(name, userInputValues) {
     });
 
     return results.rows[0];
-  }
-}
-
-async function validateUniqueUsername(name) {
-  const results = await database.query({
-    text: `
-      SELECT 
-        name
-      FROM
-        users
-      WHERE
-        LOWER(name) = LOWER($1)
-      ;`,
-    values: [name],
-  });
-
-  if (results.rowCount > 0) {
-    throw new ValidationError({
-      message: "O name informado já está sendo utilizado.",
-      action: "Utilize outro name para realizar esta operação.",
-    });
   }
 }
 
