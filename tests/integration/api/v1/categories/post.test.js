@@ -9,21 +9,7 @@ beforeAll(async () => {
 describe("POST /api/v1/categories", () => {
   describe("Anonymous user", () => {
     test("With valid data", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "saito",
-          email: "saito@gmail.com",
-          password: "senha123",
-        }),
-      });
-
-      expect(response.status).toBe(201);
-
-      const user = await response.json();
+      const user = await orchestrator.createUser();
 
       const responseCategory = await fetch(
         "http://localhost:3000/api/v1/categories",
