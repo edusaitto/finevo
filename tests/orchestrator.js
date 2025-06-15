@@ -4,6 +4,8 @@ import { faker } from "@faker-js/faker";
 import database from "infra/database.js";
 import migrator from "models/migrator.js";
 import user from "models/user.js";
+import category from "models/category.js";
+import transactionType from "models/type.js";
 
 async function waitForAllServices() {
   await waitForWebServer();
@@ -33,11 +35,31 @@ async function runPendingMigrations() {
 }
 
 async function createUser(userObject) {
+  if (!userObject) {
+    return await user.create({
+      name: faker.internet.username().replace(/[_.-]/g, ""),
+      email: faker.internet.email(),
+      password: "validpassword",
+    });
+  }
+
   return await user.create({
-    username:
-      userObject.username || faker.internet.username().replace(/[_.-]/g, ""),
+    name: userObject.name || faker.internet.username().replace(/[_.-]/g, ""),
     email: userObject.email || faker.internet.email(),
     password: userObject.password || "validpassword",
+  });
+}
+
+async function findTypes() {
+  return await transactionType.findAll();
+}
+
+async function createCategory(categoryObject) {
+  return await category.create({
+    userId: categoryObject.userId,
+    title: categoryObject.title || "categoryTitle",
+    color: categoryObject.color || "#000000",
+    type: categoryObject.type,
   });
 }
 
@@ -46,6 +68,8 @@ const orchestrator = {
   clearDatabase,
   runPendingMigrations,
   createUser,
+  findTypes,
+  createCategory,
 };
 
 export default orchestrator;

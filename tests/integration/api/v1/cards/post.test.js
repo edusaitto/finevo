@@ -6,19 +6,22 @@ beforeAll(async () => {
   await orchestrator.runPendingMigrations();
 });
 
-describe("POST /api/v1/categories", () => {
+describe("POST /api/v1/cards", () => {
   describe("Logged user", () => {
-    test("Insert category with valid data", async () => {
+    test("Insert card with valid data", async () => {
       const user = await orchestrator.createUser();
 
-      const response = await fetch("http://localhost:3000/api/v1/categories", {
+      const response = await fetch("http://localhost:3000/api/v1/cards", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId: user.id,
-          title: "newCategory",
+          title: "cardTitle",
+          color: "#000000",
+          paymentDay: 10,
+          closingDay: 15,
         }),
       });
 
@@ -32,8 +35,10 @@ describe("POST /api/v1/categories", () => {
       expect(responseBody.user_id).toBeDefined();
       expect(responseBody.user_id).not.toBeNull();
 
-      expect(responseBody.title).toBeDefined();
-      expect(responseBody.title).not.toBeNull();
+      expect(responseBody.title).toBe("cardTitle");
+      expect(responseBody.color).toBe("#000000");
+      expect(responseBody.payment_day).toBe(10);
+      expect(responseBody.closing_day).toBe(15);
     });
   });
 });
