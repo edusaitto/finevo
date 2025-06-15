@@ -31,6 +31,7 @@ async function getTransactionsFromBill(billId) {
       SELECT *
       FROM transactions
       WHERE bill = $1
+      ORDER BY add_at DESC
     `;
 
     const values = [billId];

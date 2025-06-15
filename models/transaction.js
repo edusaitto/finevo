@@ -353,7 +353,7 @@ async function getMonthExpenses(userId, monthNumber, yearNumber) {
       AND EXTRACT(MONTH FROM transactions.paid_at) = $2
       AND EXTRACT(YEAR FROM transactions.paid_at) = $3
 
-    ORDER BY paid_at DESC
+    ORDER BY paid_at ASC
   `;
 
   const values = [userId, monthNumber, yearNumber];
