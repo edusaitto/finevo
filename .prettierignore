@@ -1,1 +1,4 @@
 .next
+public/sw.js
+public/workbox-*
+public/icons/*
