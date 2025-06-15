@@ -4,6 +4,8 @@ import { faker } from "@faker-js/faker";
 import database from "infra/database.js";
 import migrator from "models/migrator.js";
 import user from "models/user.js";
+import category from "models/category.js";
+import transactionType from "models/type.js";
 
 async function waitForAllServices() {
   await waitForWebServer();
@@ -48,11 +50,26 @@ async function createUser(userObject) {
   });
 }
 
+async function findTypes() {
+  return await transactionType.findAll();
+}
+
+async function createCategory(categoryObject) {
+  return await category.create({
+    userId: categoryObject.userId,
+    title: categoryObject.title || "categoryTitle",
+    color: categoryObject.color || "#000000",
+    type: categoryObject.type,
+  });
+}
+
 const orchestrator = {
   waitForAllServices,
   clearDatabase,
   runPendingMigrations,
   createUser,
+  findTypes,
+  createCategory,
 };
 
 export default orchestrator;
