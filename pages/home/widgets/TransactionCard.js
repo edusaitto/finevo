@@ -7,6 +7,7 @@ export default function TransactionCard({ item }) {
 
   if (!item) return null;
 
+  const hasBill = !!item.bill;
   const isRevenue = item.type_title === "revenue";
   const valueColor = isRevenue ? "text-green-600" : "text-red-600";
   const icon = isRevenue ? "↑" : "↓";
@@ -72,7 +73,7 @@ export default function TransactionCard({ item }) {
         {/* Coluna direita */}
         <div className="flex flex-col items-end gap-1 text-right">
           <div className="text-xs text-gray-500">
-            {formatDate(item.paid_at)}
+            {formatDate(hasBill ? item.add_at : item.paid_at)}
           </div>
           <div
             className={`font-semibold ${valueColor} flex items-center gap-1`}

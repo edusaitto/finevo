@@ -28,10 +28,14 @@ async function getTransactionsFromBill(billId) {
 
   async function runSelectQuery(billId) {
     const query = `
-      SELECT *
+      SELECT 
+        transactions.*,
+        categories.title AS category_title,
+        categories.color AS category_color
       FROM transactions
-      WHERE bill = $1
-      ORDER BY add_at DESC
+      LEFT JOIN categories ON transactions.category = categories.id
+      WHERE transactions.bill = $1
+      ORDER BY transactions.add_at DESC
     `;
 
     const values = [billId];
