@@ -95,7 +95,7 @@ describe("POST /api/v1/users", () => {
       });
     });
 
-    test("With duplicated 'name'", async () => {
+    test("With existing 'name'", async () => {
       const response1 = await fetch("http://localhost:3000/api/v1/users", {
         method: "POST",
         headers: {
@@ -122,16 +122,7 @@ describe("POST /api/v1/users", () => {
         }),
       });
 
-      expect(response2.status).toBe(400);
-
-      const response2Body = await response2.json();
-
-      expect(response2Body).toEqual({
-        name: "ValidationError",
-        message: "O name informado já está sendo utilizado.",
-        action: "Utilize outro name para realizar esta operação.",
-        status_code: 400,
-      });
+      expect(response2.status).toBe(201);
     });
   });
 });
