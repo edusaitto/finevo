@@ -30,6 +30,12 @@ export default function HomePage() {
   }
 
   useEffect(() => {
+    if (selectedMonth) {
+      localStorage.setItem("lastSelectedMonth", JSON.stringify(selectedMonth));
+    }
+  }, [selectedMonth]);
+
+  useEffect(() => {
     const fetchData = async () => {
       const userId = localStorage.getItem("userId");
 
@@ -71,32 +77,39 @@ export default function HomePage() {
       );
 
       setMonths(translatedMonths);
-
-      if (!selectedMonth) {
-        if (translatedMonths.length == 1) {
-          setSelectedMonth(translatedMonths[0]);
-        } else if (translatedMonths.length > 1) {
-          const currentMonthNumber = new Date().getMonth() + 1;
-
-          const currentMonthLabel = translatedMonths.find(
-            (m) => m.monthNumber === currentMonthNumber,
-          );
-
-          setSelectedMonth(
-            currentMonthLabel
-              ? {
-                  number: currentMonthNumber,
-                  label: currentMonthLabel,
-                  year: new Date().getFullYear(),
-                }
-              : translatedMonths[0],
-          );
-        }
-      }
     };
 
     fetchData();
-  }, [selectedMonth]);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedMonth && months.length > 0) {
+      const storedMonth = localStorage.getItem("lastSelectedMonth");
+      if (storedMonth) {
+        try {
+          const parsed = JSON.parse(storedMonth);
+          const match = months.find(
+            (m) => m.number === parsed.number && m.year === parsed.year,
+          );
+          if (match) {
+            setSelectedMonth(match);
+            return;
+          }
+        } catch (e) {
+          console.error("Erro ao restaurar mês do localStorage:", e);
+        }
+      }
+
+      const currentMonthNumber = new Date().getMonth() + 1;
+      const currentMonth = months.find(
+        (m) =>
+          m.number === currentMonthNumber &&
+          m.year === new Date().getFullYear(),
+      );
+
+      setSelectedMonth(currentMonth ?? months[0]);
+    }
+  }, [months, selectedMonth]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -113,34 +126,11 @@ export default function HomePage() {
     }
   }, [selectedMonth]);
 
-  useEffect(() => {
-    if (selectedMonth == undefined && months) {
-      if (months.length == 1) {
-        setSelectedMonth(months[0]);
-      } else if (months.length > 1) {
-        const currentMonthNumber = new Date().getMonth() + 1;
-
-        const currentMonthLabel = months.find(
-          (m) => m.monthNumber === currentMonthNumber,
-        );
-
-        setSelectedMonth(
-          {
-            number: currentMonthNumber,
-            label: currentMonthLabel,
-            year: new Date().getFullYear(),
-          } ?? months[0],
-        );
-      }
-    }
-  }, [months, selectedMonth]);
-
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex justify-between">
           <h1 className="text-3xl font-bold text-gray-800">FINEVO</h1>
-
           <ActionButtons />
         </div>
 
@@ -161,13 +151,12 @@ export default function HomePage() {
           <div className="flex gap-2 w-max whitespace-nowrap">
             {months.map((month) => (
               <button
-                key={month.number}
+                key={`${month.number}-${month.year}`}
                 onClick={() => setSelectedMonth(month)}
                 className={`px-4 py-2 rounded-full text-sm font-medium ${
                   selectedMonth != null &&
-                  ((selectedMonth.number === month.number &&
-                    selectedMonth.year === month.year) ||
-                    months.length == 1)
+                  selectedMonth.number === month.number &&
+                  selectedMonth.year === month.year
                     ? "bg-cyan-600 text-white"
                     : "bg-white text-gray-700 border"
                 }`}
@@ -235,10 +224,9 @@ export default function HomePage() {
             {/* Lista de cards das transações */}
             <div className="overflow-x-auto w-full">
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {selectedMonth &&
-                  filteredExpenses.map((item, index) => (
-                    <TransactionCard key={index} item={item} />
-                  ))}
+                {filteredExpenses.map((item, index) => (
+                  <TransactionCard key={index} item={item} />
+                ))}
               </div>
             </div>
           </section>
