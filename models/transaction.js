@@ -165,14 +165,24 @@ async function getTotalsByPeriod(userId, month, year) {
     SELECT
       SUM(
         CASE 
-          WHEN t.add_at::date = b.today THEN t.value 
+          WHEN (
+            CASE 
+              WHEN t.card IS NOT NULL THEN t.add_at::date 
+              ELSE t.paid_at::date 
+            END
+          ) = b.today THEN t.value 
           ELSE 0 
         END
       ) AS day_total,
 
       SUM(
         CASE 
-          WHEN t.add_at::date BETWEEN b.week_start AND b.week_end 
+          WHEN (
+            CASE 
+              WHEN t.card IS NOT NULL THEN t.add_at::date 
+              ELSE t.paid_at::date 
+            END
+          ) BETWEEN b.week_start AND b.week_end 
           THEN t.value 
           ELSE 0 
         END
@@ -180,7 +190,12 @@ async function getTotalsByPeriod(userId, month, year) {
 
       SUM(
         CASE 
-          WHEN t.add_at::date BETWEEN b.month_start AND b.month_end 
+          WHEN (
+            CASE 
+              WHEN t.card IS NOT NULL THEN t.add_at::date 
+              ELSE t.paid_at::date 
+            END
+          ) BETWEEN b.month_start AND b.month_end 
           THEN t.value 
           ELSE 0 
         END
@@ -193,9 +208,9 @@ async function getTotalsByPeriod(userId, month, year) {
     WHERE t.user_id = $3
       AND ty.title = 'expense'
       AND (
-  t.fixed = false
-  OR (t.fixed = true AND t.paid_at::date = t.add_at::date)
-)
+        t.fixed = false
+        OR (t.fixed = true AND t.paid_at::date = t.add_at::date)
+      )
   `;
 
   const values = [month, year, userId];
