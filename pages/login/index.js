@@ -84,7 +84,7 @@ export default function LoginPage() {
           Ainda não tem conta?
           <Link
             href="/user/create"
-            className="text-blue-600 hover:underline cursor-pointer"
+            className="text-blue-600 hover:underline cursor-pointer ml-1"
           >
             Cadastre-se
           </Link>
