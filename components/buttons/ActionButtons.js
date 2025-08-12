@@ -18,7 +18,7 @@ export default function ActionButtons() {
 
         {menuOpen && (
           <div className="flex flex-col gap-2 p-2 bg-white rounded-xl shadow-lg w-40 absolute right-6">
-            <Link href="/cards">
+            {/* <Link href="/cards">
               <button className="w-full bg-cyan-600 text-white px-4 py-2 rounded-xl hover:bg-cyan-700 transition text-sm text-left">
                 Novo cartão
               </button>
@@ -27,7 +27,7 @@ export default function ActionButtons() {
               <button className="w-full bg-cyan-600 text-white px-4 py-2 rounded-xl hover:bg-cyan-700 transition text-sm text-left">
                 Nova categoria
               </button>
-            </Link>
+            </Link> */}
             <Link href="/transaction/revenue">
               <button className="w-full bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-cyan-700 transition text-sm text-left">
                 Nova receita
@@ -42,9 +42,8 @@ export default function ActionButtons() {
         )}
       </div>
 
-      {/* Botões normais (visíveis só em ≥sm) */}
       <div className="hidden sm:flex gap-2">
-        <Link href="/cards">
+        {/* <Link href="/cards">
           <button className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition">
             Novo cartão
           </button>
@@ -53,7 +52,7 @@ export default function ActionButtons() {
           <button className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition">
             Nova categoria
           </button>
-        </Link>
+        </Link> */}
         <Link href="/transaction/revenue">
           <button className="bg-green-600 text-white px-4 py-2 rounded-xl shadow hover:bg-green-700 transition">
             Nova receita

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import BackButton from "components/buttons/BackButton";
-import Swal from "sweetalert2";
+import SubmitButton from "components/buttons/SubmitButton";
+import { showErrorToast, showSuccessToast } from "utils/showToast";
 
 export default function CreateCategory() {
   const router = useRouter();
@@ -9,28 +10,28 @@ export default function CreateCategory() {
   const [type, setType] = useState("");
   const [color, setColor] = useState("#00acc1");
   const [types, setTypes] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
+    setLoading(true);
     e.preventDefault();
     const userId = localStorage.getItem("userId");
 
-    await fetch("/api/v1/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, title, color, type }),
-    });
+    try {
+      await fetch("/api/v1/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, title, color, type }),
+      });
 
-    Swal.fire({
-      title: "Sucesso!",
-      text: "Categoria cadastrada com sucesso!",
-      icon: "success",
-      confirmButtonText: "OK",
-      toast: true,
-      position: "top-end",
-      timer: 4500,
-      timerProgressBar: true,
-    });
-    router.push("/");
+      showSuccessToast({ message: "Categoria cadastrada com sucesso!" });
+
+      router.back();
+    } catch (e) {
+      showErrorToast();
+    } finally {
+      setLoading(false);
+    }
   };
 
   function handleChange(e) {
@@ -132,12 +133,7 @@ export default function CreateCategory() {
           </div>
 
           <div className="flex justify-end">
-            <button
-              type="submit"
-              className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition"
-            >
-              Cadastrar
-            </button>
+            <SubmitButton text="Cadastrar categoria" loading={loading} />
           </div>
         </form>
       </div>

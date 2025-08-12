@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import BackButton from "components/buttons/BackButton";
-import Swal from "sweetalert2";
+import Link from "next/link";
+import SubmitButton from "components/buttons/SubmitButton";
+import { showErrorToast, showSuccessToast } from "utils/showToast";
 
 export default function CreateRevenuePage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState(null);
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({
@@ -37,55 +40,38 @@ export default function CreateRevenuePage() {
   }
 
   async function handleSubmit(e) {
+    setLoading(true);
     e.preventDefault();
 
     const formattedValue = parseFloat(
       form.value.replace(/[^0-9,-]+/g, "").replace(",", "."),
     );
 
-    const response = await fetch(`/api/v1/transaction`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: userId,
-        title: form.title,
-        value: formattedValue,
-        category: form.category,
-        type: form.type,
-        addAt: form.addAt,
-        paidAt: form.paidAt,
-        fixed: form.fixed,
-      }),
-    });
-
-    if (response.status != 201) {
-      Swal.fire({
-        title: "Erro!",
-        text: "Houve um erro ao cadastrar a receita!",
-        icon: "success",
-        confirmButtonText: "OK",
-        toast: true,
-        position: "top-end",
-        timer: 4500,
-        timerProgressBar: true,
+    try {
+      await fetch(`/api/v1/transaction`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+          title: form.title,
+          value: formattedValue,
+          category: form.category,
+          type: form.type,
+          addAt: form.addAt,
+          paidAt: form.paidAt,
+          fixed: form.fixed,
+        }),
       });
-    }
 
-    if (response.status == 201) {
-      Swal.fire({
-        title: "Sucesso!",
-        text: "Receita cadastrada com sucesso!",
-        icon: "success",
-        confirmButtonText: "OK",
-        toast: true,
-        position: "top-end",
-        timer: 4500,
-        timerProgressBar: true,
-      });
+      showSuccessToast({ message: "Receita cadastrada com sucesso!" });
 
       router.back();
+    } catch (e) {
+      showErrorToast();
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -145,9 +131,18 @@ export default function CreateRevenuePage() {
 
           {/* Categoria */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoria
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Categoria
+              </label>
+
+              <Link href="/category">
+                <h3 className="text-cyan-600 px-4 py-2 rounded-xl text-sm text-left">
+                  Adicionar categoria
+                </h3>
+              </Link>
+            </div>
+
             <select
               name="category"
               value={form.category}
@@ -192,13 +187,7 @@ export default function CreateRevenuePage() {
             </label>
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            className="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
-          >
-            Salvar receita
-          </button>
+          <SubmitButton text="Salvar receita" loading={loading} />
         </form>
       </div>
     </div>

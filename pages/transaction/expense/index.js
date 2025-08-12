@@ -2,12 +2,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import BackButton from "components/buttons/BackButton";
-import Swal from "sweetalert2";
+import Link from "next/link";
+import SubmitButton from "components/buttons/SubmitButton";
+import { showErrorToast, showSuccessToast } from "utils/showToast";
 
 export default function CreateExpensePage() {
   const router = useRouter();
   const { id } = router.query;
   const isEditing = Boolean(id);
+
+  const [loading, setLoading] = useState(false);
 
   const [userId, setUserId] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -46,6 +50,7 @@ export default function CreateExpensePage() {
   }
 
   async function handleSubmit(e) {
+    setLoading(true);
     e.preventDefault();
 
     const formattedValue = parseFloat(
@@ -55,52 +60,33 @@ export default function CreateExpensePage() {
     const method = isEditing ? "PUT" : "POST";
     const url = isEditing ? `/api/v1/transaction/${id}` : "/api/v1/transaction";
 
-    const response = await fetch(url, {
-      method: method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: userId,
-        title: form.title,
-        value: formattedValue,
-        category: form.category,
-        type: form.type,
-        paidAt: form.paidAt,
-        addAt: form.addAt,
-        creditCard: form.creditCard,
-        bill: form.bill,
-        repeat: form.repeat,
-        fixed: form.fixed,
-      }),
-    });
-
-    if (response.status != 201) {
-      Swal.fire({
-        title: "Erro!",
-        text: "Houve um erro ao cadastrar a despesa!",
-        icon: "success",
-        confirmButtonText: "OK",
-        toast: true,
-        position: "top-end",
-        timer: 4500,
-        timerProgressBar: true,
-      });
-    }
-
-    if (response.status == 201) {
-      Swal.fire({
-        title: "Sucesso!",
-        text: "Despesa cadastrada com sucesso!",
-        icon: "success",
-        confirmButtonText: "OK",
-        toast: true,
-        position: "top-end",
-        timer: 4500,
-        timerProgressBar: true,
+    try {
+      await fetch(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+          title: form.title,
+          value: formattedValue,
+          category: form.category,
+          type: form.type,
+          paidAt: form.paidAt,
+          addAt: form.addAt,
+          creditCard: form.creditCard,
+          bill: form.bill,
+          repeat: form.repeat,
+          fixed: form.fixed,
+        }),
       });
 
+      showSuccessToast({ message: "Despesa cadastrada com sucesso!" });
       router.back();
+    } catch (e) {
+      showErrorToast();
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -218,9 +204,18 @@ export default function CreateExpensePage() {
 
           {/* Categoria */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoria
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Categoria
+              </label>
+
+              <Link href="/category">
+                <h3 className="text-cyan-600 px-4 py-2 rounded-xl text-sm text-left">
+                  Adicionar categoria
+                </h3>
+              </Link>
+            </div>
+
             <select
               name="category"
               value={form.category}
@@ -238,9 +233,17 @@ export default function CreateExpensePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Forma de pagamento
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Forma de pagamento
+              </label>
+
+              <Link href="/cards">
+                <h3 className="text-cyan-600 px-4 py-2 rounded-xl text-sm text-left">
+                  Adicionar cartão
+                </h3>
+              </Link>
+            </div>
             <select
               name="creditCard"
               value={form.creditCard}
@@ -339,12 +342,7 @@ export default function CreateExpensePage() {
           </div>
 
           {/* Submit */}
-          <button
-            type="submit"
-            className="w-full bg-cyan-600 text-white py-2 rounded-xl hover:bg-cyan-700 transition"
-          >
-            Salvar despesa
-          </button>
+          <SubmitButton text="Salvar despesa" loading={loading} />
         </form>
       </div>
     </div>

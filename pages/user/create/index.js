@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
+import SubmitButton from "components/buttons/SubmitButton";
+import { showErrorToast, showSuccessToast } from "utils/showToast";
 
 export default function CadastroPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -17,6 +20,7 @@ export default function CadastroPage() {
   }
 
   async function handleSubmit(e) {
+    setLoading(true);
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
       Swal.fire({
@@ -29,23 +33,38 @@ export default function CadastroPage() {
         timer: 4500,
         timerProgressBar: true,
       });
+
+      setLoading(false);
       return;
     }
 
-    const response = await fetch(`/api/v1/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-      }),
-    });
+    try {
+      const response = await fetch(`/api/v1/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        }),
+      });
 
-    if (response.status == "201") {
+      const json = await response.json();
+
+      if (response.status !== 201) {
+        showErrorToast({ error: json.message });
+        return;
+      }
+
+      showSuccessToast({ message: "Usuário cadastrado com sucesso!" });
+
       router.back();
+    } catch (e) {
+      showErrorToast();
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -107,12 +126,7 @@ export default function CadastroPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-cyan-600 text-white py-2 rounded hover:bg-cyan-700 transition"
-          >
-            Cadastrar
-          </button>
+          <SubmitButton text="Cadastrar" loading={loading} />
         </form>
       </div>
     </div>
