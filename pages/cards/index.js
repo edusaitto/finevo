@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import BackButton from "components/buttons/BackButton";
-import Swal from "sweetalert2";
+import SubmitButton from "components/buttons/SubmitButton";
+import { showErrorToast, showSuccessToast } from "utils/showToast";
 
 export default function CreateCard() {
   const router = useRouter();
@@ -9,28 +10,28 @@ export default function CreateCard() {
   const [color, setColor] = useState("#00acc1");
   const [closingDay, setClosingDay] = useState(1);
   const [paymentDay, setPaymentDay] = useState(10);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
+    setLoading(true);
     e.preventDefault();
     const userId = localStorage.getItem("userId");
 
-    await fetch("/api/v1/cards", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, title, color, paymentDay, closingDay }),
-    });
+    try {
+      await fetch("/api/v1/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, title, color, paymentDay, closingDay }),
+      });
 
-    Swal.fire({
-      title: "Sucesso!",
-      text: "Cartão cadastrado com sucesso!",
-      icon: "success",
-      confirmButtonText: "OK",
-      toast: true,
-      position: "top-end",
-      timer: 4500,
-      timerProgressBar: true,
-    });
-    router.push("/");
+      showSuccessToast({ message: "Cartão cadastrado com sucesso!" });
+
+      router.back();
+    } catch (e) {
+      showErrorToast();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,12 +104,7 @@ export default function CreateCard() {
           </div>
 
           <div className="flex justify-end">
-            <button
-              type="submit"
-              className="bg-cyan-600 text-white px-4 py-2 rounded-xl shadow hover:bg-cyan-700 transition"
-            >
-              Cadastrar
-            </button>
+            <SubmitButton text="Cadastrar cartão" loading={loading} />
           </div>
         </form>
       </div>

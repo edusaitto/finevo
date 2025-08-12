@@ -1,45 +1,45 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Swal from "sweetalert2";
+import SubmitButton from "components/buttons/SubmitButton";
+import { showErrorToast } from "utils/showToast";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
+    setLoading(true);
     e.preventDefault();
 
-    const response = await fetch(`/api/v1/users/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: email,
-        password: password,
-      }),
-    });
-
-    const json = await response.json();
-
-    if (response.status != 201) {
-      Swal.fire({
-        title: "Erro!",
-        text: "Usuário e/ou senha incorretos.",
-        icon: "error",
-        confirmButtonText: "OK",
-        toast: true,
-        position: "top-end",
-        timer: 4500,
-        timerProgressBar: true,
+    try {
+      const response = await fetch(`/api/v1/users/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
       });
-    }
 
-    if (response.status == 201) {
+      const json = await response.json();
+
+      if (response.status !== 201) {
+        showErrorToast({ error: json.message });
+        return;
+      }
+
       localStorage.setItem("userId", json.userId);
+
       router.push("/");
+    } catch (e) {
+      showErrorToast();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,15 +74,14 @@ export default function LoginPage() {
               className="w-full mt-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <button
-            type="submit"
-            className="w-full py-2 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 transition-colors"
-          >
-            Entrar
-          </button>
+          <SubmitButton
+            text="Entrar"
+            loading={loading}
+            loadingMessage="Acessando..."
+          />
         </form>
         <p className="mt-4 text-sm text-gray-500 text-center">
-          Ainda não tem conta?{" "}
+          Ainda não tem conta?
           <Link
             href="/user/create"
             className="text-blue-600 hover:underline cursor-pointer"
