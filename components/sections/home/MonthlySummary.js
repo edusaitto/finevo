@@ -6,16 +6,21 @@ export default function MonthlySummary({
   checkpoint,
   endOfMonth,
 }) {
+  const _revenue = revenue || "R$ --";
+  const _expenses = expenses || "R$ --";
+  const _checkpoint = checkpoint || "R$ --";
+  const _endOfMonth = endOfMonth || "R$ --";
+
   return (
     <section>
       <h2 className="text-xl font-semibold text-gray-700 mb-4">
         Resumo Mensal
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card title="Entradas" value={revenue} />
-        <Card title="Saídas" value={expenses} />
-        <Card title="Checkpoint (Dia 14)" value={checkpoint} />
-        <Card title="Fim do Mês" value={endOfMonth} />
+        <Card title="Entradas" value={_revenue} />
+        <Card title="Saídas" value={_expenses} />
+        <Card title="Checkpoint (Dia 14)" value={_checkpoint} />
+        <Card title="Fim do Mês" value={_endOfMonth} />
       </div>
     </section>
   );
