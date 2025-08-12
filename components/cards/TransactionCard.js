@@ -29,8 +29,10 @@ export default function TransactionCard({ item }) {
   function handleClick() {
     if (item.bill_title) {
       router.push(`/bills/${item.id}`);
+    } else if (item.type_title === "revenue") {
+      // router.push(`/transaction/revenue?id=${item.id}`);
     } else {
-      router.push(`/transaction/expense?id=${item.id}`);
+      //router.push(`/transaction/expense?id=${item.id}`);
     }
   }
 
