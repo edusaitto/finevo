@@ -1,7 +1,11 @@
 import jwt from "jsonwebtoken";
-import { useEffect, useState } from "react";
-import TransactionCard from "./home/widgets/TransactionCard.js";
+import { useEffect, useState, useCallback } from "react";
 import ActionButtons from "components/buttons/ActionButtons.js";
+import MonthlySummary from "components/sections/home/MonthlySummary.js";
+import { monthsPt } from "utils/months.js";
+import CurrentSummary from "components/sections/home/CurrentSummary.js";
+import MonthTransactions from "components/sections/home/MonthTransactions.js";
+import formatCurrency from "utils/formatCurrency";
 
 export default function HomePage() {
   const [selectedMonth, setSelectedMonth] = useState();
@@ -13,7 +17,6 @@ export default function HomePage() {
   const [currentRevenue, setCurrentRevenue] = useState();
   const [currentExpenses, setCurrentExpenses] = useState();
   const [months, setMonths] = useState([]);
-
   const [expenses, setExpenses] = useState([]);
   const [filterType, setFilterType] = useState("all");
 
@@ -22,67 +25,59 @@ export default function HomePage() {
     return item.type_title === filterType;
   });
 
-  function formatCurrency(value) {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  }
-
-  useEffect(() => {
+  const verifyLastSelectedMonth = useCallback(() => {
     if (selectedMonth) {
       localStorage.setItem("lastSelectedMonth", JSON.stringify(selectedMonth));
     }
   }, [selectedMonth]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const userId = localStorage.getItem("userId");
+  const getAvailableMonths = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    const responseMonths = await fetch(
+      `/api/v1/transaction/user/${userId}/months`,
+    );
+    const dataMonths = await responseMonths.json();
 
-      const responseTotals = await fetch(
-        `/api/v1/home/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
-      );
-      const dataTotals = await responseTotals.json();
-      setDailyExpenses(formatCurrency(dataTotals.day));
-      setWeeklyExpenses(formatCurrency(dataTotals.week));
+    const translatedMonths = dataMonths.map(
+      ({ monthNumber, monthName, year }) => ({
+        number: monthNumber,
+        label: monthsPt[monthName] || monthName,
+        year: year,
+      }),
+    );
 
-      setCurrentRevenue(formatCurrency(dataTotals.revenue));
-      setCurrentExpenses(formatCurrency(dataTotals.expenses));
-
-      setForecastCheckpoint(formatCurrency(dataTotals.forecastCheckpoint));
-      setForecastEndOfMonth(formatCurrency(dataTotals.forecastEndOfMonth));
-      setCurrentBalanceMonth(
-        formatCurrency(dataTotals.currentBalanceCurrentMonth),
-      );
-    };
-
-    if (selectedMonth) {
-      fetchData();
-    }
-  }, [selectedMonth]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const userId = localStorage.getItem("userId");
-      const responseMonths = await fetch(
-        `/api/v1/transaction/user/${userId}/months`,
-      );
-      const dataMonths = await responseMonths.json();
-      const translatedMonths = dataMonths.map(
-        ({ monthNumber, monthName, year }) => ({
-          number: monthNumber,
-          label: monthsPt[monthName] || monthName,
-          year: year,
-        }),
-      );
-
-      setMonths(translatedMonths);
-    };
-
-    fetchData();
+    setMonths(translatedMonths);
   }, []);
 
-  useEffect(() => {
+  const getMonthExpenses = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    const response = await fetch(
+      `/api/v1/transaction/user/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
+    );
+    const data = await response.json();
+    if (data) setExpenses(data);
+  }, [selectedMonth]);
+
+  const getSummaries = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+
+    const responseTotals = await fetch(
+      `/api/v1/home/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
+    );
+    const dataTotals = await responseTotals.json();
+
+    setDailyExpenses(formatCurrency(dataTotals.day));
+    setWeeklyExpenses(formatCurrency(dataTotals.week));
+    setCurrentRevenue(formatCurrency(dataTotals.revenue));
+    setCurrentExpenses(formatCurrency(dataTotals.expenses));
+    setForecastCheckpoint(formatCurrency(dataTotals.forecastCheckpoint));
+    setForecastEndOfMonth(formatCurrency(dataTotals.forecastEndOfMonth));
+    setCurrentBalanceMonth(
+      formatCurrency(dataTotals.currentBalanceCurrentMonth),
+    );
+  }, [selectedMonth]);
+
+  const retrieveLastSelectedMonth = useCallback(async () => {
     if (!selectedMonth && months.length > 0) {
       const storedMonth = localStorage.getItem("lastSelectedMonth");
       if (storedMonth) {
@@ -112,19 +107,21 @@ export default function HomePage() {
   }, [months, selectedMonth]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const userId = localStorage.getItem("userId");
-      const response = await fetch(
-        `/api/v1/transaction/user/${userId}?month=${selectedMonth.number}&year=${selectedMonth.year}`,
-      );
-      const data = await response.json();
-      if (data) setExpenses(data);
-    };
+    verifyLastSelectedMonth();
 
     if (selectedMonth != undefined) {
-      fetchData();
+      getMonthExpenses();
+      getSummaries();
     }
-  }, [selectedMonth]);
+  }, [selectedMonth, verifyLastSelectedMonth, getMonthExpenses, getSummaries]);
+
+  useEffect(() => {
+    getAvailableMonths();
+  }, [getAvailableMonths]);
+
+  useEffect(() => {
+    retrieveLastSelectedMonth();
+  }, [months, selectedMonth, retrieveLastSelectedMonth]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -134,19 +131,12 @@ export default function HomePage() {
           <ActionButtons />
         </div>
 
-        {/* Seção 1 */}
-        <section>
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
-            Resumo Atual
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card title="Gastos do Dia" value={dailyExpenses} />
-            <Card title="Gastos da Semana" value={weeklyExpenses} />
-            <Card title="Saldo Atual" value={currentBalanceMonth} />
-          </div>
-        </section>
+        <CurrentSummary
+          daily={dailyExpenses}
+          weekly={weeklyExpenses}
+          balance={currentBalanceMonth}
+        />
 
-        {/* Aba de troca de mês */}
         <div className="mt-6 overflow-x-auto hide-scrollbar">
           <div className="flex gap-2 w-max whitespace-nowrap">
             {months.map((month) => (
@@ -167,81 +157,22 @@ export default function HomePage() {
           </div>
         </div>
 
-        <section>
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
-            Resumo Mensal
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card title="Entradas" value={currentRevenue} />
-            <Card title="Saídas" value={currentExpenses} />
-            <Card title="Checkpoint (Dia 14)" value={forecastCheckpoint} />
-            <Card title="Fim do Mês" value={forecastEndOfMonth} />
-          </div>
-        </section>
+        <MonthlySummary
+          revenue={currentRevenue}
+          expenses={currentExpenses}
+          checkpoint={forecastCheckpoint}
+          endOfMonth={forecastEndOfMonth}
+        />
 
-        {/* Lista de gastos do mês selecionado */}
         {selectedMonth && (
-          <section className="bg-white rounded-xl shadow p-4 mt-4">
-            <div className="flex flex-col sm:flex-row justify-between gap-3">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Transações de {selectedMonth.label.toLowerCase()}
-              </h3>
-
-              <div className="flex gap-2 justify-end mb-3">
-                <button
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    filterType === "all"
-                      ? "bg-cyan-600 text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                  onClick={() => setFilterType("all")}
-                >
-                  Todos
-                </button>
-                <button
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    filterType === "revenue"
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                  onClick={() => setFilterType("revenue")}
-                >
-                  Receitas
-                </button>
-                <button
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    filterType === "expense"
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                  onClick={() => setFilterType("expense")}
-                >
-                  Despesas
-                </button>
-              </div>
-            </div>
-
-            {/* Lista de cards das transações */}
-            <div className="overflow-x-auto w-full">
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {filteredExpenses.map((item, index) => (
-                  <TransactionCard key={index} item={item} />
-                ))}
-              </div>
-            </div>
-          </section>
+          <MonthTransactions
+            selectedMonth={selectedMonth}
+            filteredExpenses={filteredExpenses}
+            filterType={filterType}
+            setFilterType={setFilterType}
+          />
         )}
       </div>
-    </div>
-  );
-}
-
-// Componente de Card reutilizável
-function Card({ title, value }) {
-  return (
-    <div className="bg-white rounded-xl shadow p-4">
-      <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
-      <p className="text-2xl font-bold text-gray-800 mt-2">{value}</p>
     </div>
   );
 }
@@ -249,40 +180,21 @@ function Card({ title, value }) {
 export async function getServerSideProps(context) {
   const { req } = context;
   const token = req.cookies.token;
+  const redirect = {
+    redirect: {
+      destination: "/login",
+      permanent: false,
+    },
+  };
 
   if (!token) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
+    return redirect;
   }
 
   try {
     const user = jwt.verify(token, process.env.JWT_SECRET);
     return { props: { user } };
   } catch (err) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
+    return redirect;
   }
 }
-
-const monthsPt = {
-  January: "Janeiro",
-  February: "Fevereiro",
-  March: "Março",
-  April: "Abril",
-  May: "Maio",
-  June: "Junho",
-  July: "Julho",
-  August: "Agosto",
-  September: "Setembro",
-  October: "Outubro",
-  November: "Novembro",
-  December: "Dezembro",
-};
