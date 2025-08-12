@@ -123,7 +123,6 @@ async function create(transactionInputValues) {
       }
     }
 
-    // Insere a transação (para o mês atual ou futuro)
     const result = await database.query({
       text: `
         INSERT INTO 
@@ -150,6 +149,56 @@ async function create(transactionInputValues) {
   }
 
   return createdTransactions;
+}
+
+async function update(id, transactionInputValues) {
+  const currentTransaction = await findOneById(id);
+
+  const transactionWithNewValues = {
+    ...currentTransaction,
+    ...transactionInputValues,
+  };
+
+  const updatedTransaction = await runUpdateQuery(transactionWithNewValues);
+  return updatedTransaction;
+
+  async function runUpdateQuery(transactionWithNewValues) {
+    const results = await database.query({
+      text: `
+        UPDATE 
+          transactions
+        SET
+          title = $1,
+          value = $2,
+          fixed = $3,
+          category = $4,
+          type = $5,
+          card = $6,
+          bill = $7,
+          paid_at = $8,
+          add_at = $9,
+          updated_at = timezone('utc', now())
+        WHERE 
+          id = $10
+        RETURNING
+          *
+        `,
+      values: [
+        transactionWithNewValues.title,
+        transactionWithNewValues.value,
+        transactionWithNewValues.fixed,
+        transactionWithNewValues.category,
+        transactionWithNewValues.type,
+        transactionWithNewValues.card,
+        transactionWithNewValues.bill,
+        transactionWithNewValues.paidAt,
+        transactionWithNewValues.addAt,
+        transactionWithNewValues.id,
+      ],
+    });
+
+    return results.rows[0];
+  }
 }
 
 async function getTotalsByPeriod(userId, month, year) {
@@ -421,6 +470,7 @@ const transaction = {
   findAllByUserId,
   findOneById,
   create,
+  update,
   getBalanceAndForecasts,
   getTotalsByPeriod,
   getUserMonths,

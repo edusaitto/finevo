@@ -6,6 +6,7 @@ import migrator from "models/migrator.js";
 import user from "models/user.js";
 import category from "models/category.js";
 import transactionType from "models/type.js";
+import transaction from "models/transaction.js";
 
 async function waitForAllServices() {
   await waitForWebServer();
@@ -63,6 +64,19 @@ async function createCategory(categoryObject) {
   });
 }
 
+async function createTransaction(transactionObject) {
+  return await transaction.create({
+    userId: transactionObject.userId,
+    type: transactionObject.type,
+    addAt: transactionObject.addAt,
+    paidAt: transactionObject.paidAt,
+    category: transactionObject.category,
+    title: transactionObject.title || "transactionTitle",
+    value: transactionObject.value || 100.0,
+    fixed: transactionObject.fixed || false,
+  });
+}
+
 const orchestrator = {
   waitForAllServices,
   clearDatabase,
@@ -70,6 +84,7 @@ const orchestrator = {
   createUser,
   findTypes,
   createCategory,
+  createTransaction,
 };
 
 export default orchestrator;
