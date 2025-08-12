@@ -1,24 +1,6 @@
 import Card from "components/cards/BasicCard.js";
 
 export default function CurrentSummary({ daily, weekly, balance }) {
-  if (daily === null) {
-    return (
-      <div className="flex align-center justify-center mt-5 pt-5">
-        <h3 className="text-lg font-semibold text-gray-500">
-          Você ainda não adicionou nenhuma transação
-        </h3>
-      </div>
-    );
-  }
-
-  if (daily == undefined) {
-    return (
-      <div className="animate-pulse">
-        <div className="h-[128px] bg-gray-200 rounded w-full"></div>
-      </div>
-    );
-  }
-
   return (
     <section>
       <h2 className="text-xl font-semibold text-gray-700 mb-4">Resumo Atual</h2>

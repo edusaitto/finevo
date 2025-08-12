@@ -6,14 +6,6 @@ export default function MonthlySummary({
   checkpoint,
   endOfMonth,
 }) {
-  if (revenue === undefined || expenses === undefined) {
-    return (
-      <div className="animate-pulse">
-        <div className="h-[128px] bg-gray-200 rounded w-full"></div>
-      </div>
-    );
-  }
-
   return (
     <section>
       <h2 className="text-xl font-semibold text-gray-700 mb-4">
